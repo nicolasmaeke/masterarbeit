@@ -19,10 +19,10 @@ public class Schedule {
 	private final HashMap<String, Servicejourney> servicejourneys;
 	private final int numberOfServiceJourneys; 
 	private HashMap<String, Stoppoint> stoppointsWithLoadingStations = new HashMap<String, Stoppoint>();
-	private static final double VEHICLE_COSTS = 400000; // fix costs for a vehicle in a planning period
-	private static final double LOADINGSTATION_COSTS = 250000; // fix costs for a loadingstation in a planning period
-	private static final double LOADING_COSTS = 0.1; // electricity price per kWh
-	private static final double STAFF_COSTS = 20; // staff costs per vehicle per hour
+	public static final double VEHICLE_COSTS = 400000; // fix costs for a vehicle in a planning period
+	public static final double LOADINGSTATION_COSTS = 250000; // fix costs for a loadingstation in a planning period
+	public static final double LOADING_COSTS = 0.1; // electricity price per kWh
+	public static final double STAFF_COSTS = 20; // staff costs per vehicle per hour
 	
 	public Schedule(ArrayList<Roundtrip> umlaufplan, HashMap<String, Servicejourney> servicejourneys, List<Depot> depots, HashMap<String, Stoppoint> stoppoints){
 		this.umlaufplan = umlaufplan;
@@ -72,9 +72,8 @@ public class Schedule {
 		double vehicleCosts = anzahlFahrzeuge * VEHICLE_COSTS;
 		int anzahlLoadingStations = numberOfLoadingStations; 
 		double loadingStationCosts = anzahlLoadingStations * LOADINGSTATION_COSTS;
-		double fixcosts = vehicleCosts + loadingStationCosts;
-		setFixCosts(fixcosts);
-		double variableCosts = 0.0;
+		double fix = vehicleCosts + loadingStationCosts;
+		double variable = 0.0;
 		double energycosts = 0.0;
 		double staffcosts = 0.0;
 		double energyConsumption = 0.0;
@@ -83,13 +82,14 @@ public class Schedule {
 			for (int j = 0; j < umlaufplan.get(i).getJourneys().size(); j++) {
 				energyConsumption = umlaufplan.get(i).getJourneys().get(j).getEnergyConsumption();
 				energycosts = energyConsumption * LOADING_COSTS;
-				runtimeInHours = umlaufplan.get(i).getJourneys().get(j).getRuntime()/1000/60/60;
+				runtimeInHours = (umlaufplan.get(i).getJourneys().get(j).getRuntime() * 0.001) / 60 / 60;
 				staffcosts = runtimeInHours * STAFF_COSTS;
-				variableCosts = variableCosts + staffcosts + energycosts;
+				variable = variable + staffcosts + energycosts;
 			}
 		}
-		setVariableCosts(variableCosts);
-		setTotalCosts(variableCosts + getFixCosts());
+		setFixCosts(fix);
+		setVariableCosts(variable);
+		setTotalCosts(variable + fix);
 	}
 	
 	public boolean isFeasible(){
@@ -153,6 +153,7 @@ public class Schedule {
 				}
 			}
 		}
+		/**
 		if(count != numberOfServiceJourneys){
 			if(count < numberOfServiceJourneys){
 				//System.err.println("Es fehlen Servicefahrten");
@@ -162,6 +163,7 @@ public class Schedule {
 			}
 			return false;
 		}
+		*/
 		return true;
 	}
 
@@ -201,9 +203,12 @@ public class Schedule {
 	}
 	
 	public void printLoadingstations(){
+		int counter = 0;
 		for(Entry<String, Stoppoint> e: stoppointsWithLoadingStations.entrySet()){
+			counter = counter + e.getValue().getFrequency();
 			System.out.println("Loadingstation " + e.getKey() + " has frequency: " + e.getValue().getFrequency());
 		}
+		System.out.println("Gesamtanzahl Ladevorgaenge: " + counter);
 	}
 
 }

@@ -20,9 +20,9 @@ public class Deadruntime implements Journey{
 		this.fromStopId = fromStopID;
 		this.toStopId = toStopID;
 		this.id = "" + fromStopId + toStopId;
-		this.distance = distance;
+		this.distance = distance; // in Meter
 		this.runtime = runtime*1000; // von eingelesenen Sekunden in Millisekunden umwandeln
-    	this.energyConsumption = (distance/1000) * 1.5; // Annahme: 1,5kWh/km
+    	this.energyConsumption = (distance*0.001) * 1.5; // Annahme: 1,5kWh/km
 	}
 
 	public String getId() {

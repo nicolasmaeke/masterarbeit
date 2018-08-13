@@ -53,6 +53,9 @@ public class Savings {
 		int iteration = 0;
 		
 		do {
+			if(iteration == 621){
+				System.out.println();
+			}
 			savingsMatrix = neuerUmlaufplan(savingsMatrix);
 			valueSaving = 0.0;
 			for (Entry<String, Double> e: savingsMatrix.entrySet()){ 
@@ -241,7 +244,7 @@ public class Savings {
 		String currentKey = null; // Schluessel des aktuell behandelten Savings
 		List<String> keys = new ArrayList<String>(); // Schluessel aller savings, die schon betrachtet wurden
 		LinkedList<Journey> currentNew = null; //  Container fuer den neu zusammengelegten Umlauf
-		//HashMap <String, ArrayList<Stoppoint>> numberOfNewLoadingStations = null; // Container fuer die Haltestellen, an denen Ladestationen gebaut werden muessen, um die Savings realisiern zu koennen
+		//HashMap <String, ArrayList<Stoppoint>> numberOfnewLoadingstations = null; // Container fuer die Haltestellen, an denen Ladestationen gebaut werden muessen, um die Savings realisiern zu koennen
 		ArrayList<ArrayList<Stoppoint>> list = new ArrayList<ArrayList<Stoppoint>>();
 		if(currenntSavingsMatrix.isEmpty()){ 
 			return currenntSavingsMatrix; // in diesem Fall (es gibt keine Savings) werden die Pendeltouren zurueckgegeben
@@ -253,17 +256,16 @@ public class Savings {
 			}
 			if(!keys.contains(currentKey)){ // falls diese Savings noch nicht betrachtet worden sind
 				do{
-					if(currentKey.equals("0098304601572873")){
-						System.out.println();
-					}
 					currentNew = umlaeufeZusammenlegen(currentKey); // lege die beiden Umlaeufe mit den groessten Savings zusammen
 					if(currentNew == null){
 						currenntSavingsMatrix.remove(currentKey);
 					}
 				} while (currentNew == null);
-				//numberOfNewLoadingStations = newLoadingstations(currentNew, currentKey); 
-
-				list = FeasibilityHelper.howIsRoundtourFeasible(currentNew, stoppoints, deadruntimes, servicejourneys);
+				//numberOfnewLoadingstations = newLoadingstations(currentNew, currentKey); 
+				if(currentKey.equals("0294912101114121")){
+					System.out.println();
+				}
+				list = FeasibilityHelper.newLoadingstations(currentNew, stoppoints, deadruntimes, servicejourneys);
 
 				if (list == null){ // falls der Umlauf nicht moeglich ist
 					currenntSavingsMatrix.remove(currentKey); // aktuell betrachtete Savings werden auf 0 gesetzt
@@ -278,21 +280,25 @@ public class Savings {
 			}
 			else {
 				currentNew = umlaeufeZusammenlegen(currentKey);
-				list = FeasibilityHelper.howIsRoundtourFeasible(currentNew, stoppoints, deadruntimes, servicejourneys);
+				list = FeasibilityHelper.newLoadingstations(currentNew, stoppoints, deadruntimes, servicejourneys);
 				}
 		} while (currentKey != getHighestSaving(currenntSavingsMatrix)); // solange die Savings Matrix veraendert wird bzw. die vormal groessten Savings auf Grund der Veranedrung nicht mehr die groessten Savings sind
 
+		if(currentKey.equals("0294912101114121")){
+			System.out.println();
+		}
 		if(!umlaufplan.isFeasible()){
 			System.err.println("Fehler: Umlaufplan nicht möglich!");
+			System.out.println(currentKey);
 		}
 
 		for (int i = 0; i < list.get(0).size(); i++) {
 			Stoppoint x = (Stoppoint) list.get(0).get(i);
 			if(x.isLoadingstation() == false){
 				x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+				umlaufplan.getStoppointsWithLoadingStations().put(x.getId(), x);
+				System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 			}
-			umlaufplan.getStoppointsWithLoadingStations().put(x.getId(), x);
-			System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 		}
 		
 		/**
@@ -316,8 +322,12 @@ public class Savings {
 			}
 		}
 
+		if(currentKey.equals("0294912101114121")){
+			System.out.println();
+		}
 		if(!umlaufplan.isFeasible()){
 			System.err.println("Fehler: Umlaufplan nicht möglich!");
+			System.out.println(currentKey);
 		}
 		
 		currenntSavingsMatrix.remove(currentKey);
@@ -335,11 +345,12 @@ public class Savings {
 	private double calculateSavings(Roundtrip one, Servicejourney last, Roundtrip two, Servicejourney first, Deadruntime deadrun) {
 		double saving = 0;
 		double zeitpuffer = FeasibilityHelper.zeitpufferZwischenServicefahrten(last, first, deadrun);
+		double relZeitpuffer = zeitpuffer / 1000;
 		double d1 = one.getJourneys().getLast().getDistance(); // Distanz zwischen letzter Servicefahrt und Depot
 		double d2 = two.getJourneys().getFirst().getDistance(); // Distanz zwischen Depot und erster Servicefahrt
 		// Savings: eingesparte Fahrten (d1,d2) minus zusaetzliche Fahrt (deadrun) plus Einsparung eines Fahrzeugs (400.000)
 		// zeitpuffer/1000 sind Strafkosten fuer die Wartezeit zw. den beiden SF (kurze Wartezeit soll belohnt werden)
-		saving = d1 + d2 - deadrun.getDistance() + 400000 - (zeitpuffer/1000); // zeitpuffer/1000 sind Strafkosten dafuer, dass zwei sehr weit auseinader liegende SF zusammengelegt werdern
+		saving = d1 + d2 - deadrun.getDistance() + 400000 - relZeitpuffer; // zeitpuffer/1000 sind Strafkosten dafuer, dass zwei sehr weit auseinader liegende SF zusammengelegt werdern
 		return saving;
 	}
 
@@ -376,6 +387,9 @@ public class Savings {
 			zwei.removeFirst(); // damit nicht drei Leerfahrten aufeinander folgen können
 		}
 		neu = eins;
+		if(neu.getLast() instanceof Deadruntime){
+			neu.removeLast();
+		}
 		neu.add(deadruntimes.get(eins.getLast().getToStopId()+zwei.getFirst().getFromStopId())); // neu entstehende Leerfahrt zwischen eins und zwei
 		neu.addAll(zwei);
 

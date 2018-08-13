@@ -7,15 +7,17 @@ public class Verbesserungsobjekt {
 	double savings = 0;
 	Roundtrip eins = null;
 	Roundtrip zwei = null;
-	int indexAltEins = 0;
-	int indexAltZwei = 0;
+	//int indexAltEins = 0;
+	//int indexAltZwei = 0;
+	Roundtrip altEins = null;
+	Roundtrip altZwei = null;
 
-	public Verbesserungsobjekt(double savings, Roundtrip eins, Roundtrip zwei, int indexAltEins, int indexAltZwei) {
+	public Verbesserungsobjekt(double savings, Roundtrip eins, Roundtrip zwei, Roundtrip altEins, Roundtrip altZwei) {
 		this.savings = savings;
 		this.eins = eins;
 		this.zwei = zwei;
-		this.indexAltEins = indexAltEins;
-		this.indexAltZwei = indexAltZwei;
+		this.altEins = altEins;
+		this.altZwei = altZwei;
 	}
 
 	public double getSavings() {
@@ -42,6 +44,7 @@ public class Verbesserungsobjekt {
 		this.zwei = zwei;
 	}
 
+	/**
 	public int getIndexAltEins() {
 		return indexAltEins;
 	}
@@ -56,6 +59,23 @@ public class Verbesserungsobjekt {
 
 	public void setIndexAltZwei(int indexAltZwei) {
 		this.indexAltZwei = indexAltZwei;
+	}
+	*/
+
+	public Roundtrip getAltEins() {
+		return altEins;
+	}
+
+	public void setAltEins(Roundtrip altEins) {
+		this.altEins = altEins;
+	}
+
+	public Roundtrip getAltZwei() {
+		return altZwei;
+	}
+
+	public void setAltZwei(Roundtrip altZwei) {
+		this.altZwei = altZwei;
 	}
 
 

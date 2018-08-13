@@ -41,7 +41,7 @@ public class Servicejourney implements Journey{
 		this.ArrTime = sfArrTime;
 		this.sfDistance = sfDistance;
 		this.setSfRuntime();
-		this.sfEnergyConsumption = sfDistance/1000 * 2.0;// Annahme: der Verbrauch einer Leerfahrt ist 2kWh pro Kilometer;
+		this.sfEnergyConsumption = (sfDistance*0.001) * 2.0;// Annahme: der Verbrauch einer Leerfahrt ist 2kWh pro Kilometer;
 	}
 
 	/**

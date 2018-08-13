@@ -207,13 +207,19 @@ public class ReadInitialSolution {
 							}		
 						}
                         ArrayList<Stoppoint> laden = new ArrayList<Stoppoint>();
-                        for (int i = 0; i < idStoppoints.length; i++) {
-							laden.add((stoppoints.get(idStoppoints[i])));
+                        if (!idStoppoints[0].equals("")) {
+                            for (int i = 0; i < idStoppoints.length; i++) {
+    							laden.add((stoppoints.get(idStoppoints[i])));
+    						}
 						}
                         neu.setLaden(laden);
                         neu.setStellen(laden);
                         
                         roundtrips.add(neu);
+                        
+                        if (laden.contains(null)) {
+							System.err.println("Ladeliste enthält null!");
+						}
 						
 						temp = reader.readLine(); // nächste Zeile
 					}

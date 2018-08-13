@@ -109,6 +109,12 @@ public class Roundtrip {
 		return result;
 	}
 
+	/**
+	 * 
+	 * @param index1
+	 * @param index2
+	 * @return list of journeys inclusive index1 and index2
+	 */
 	public LinkedList<Journey> getFahrtenVonBis(int index1, int index2){
 		LinkedList<Journey> fahrten = new LinkedList<Journey>();
 		for (int i = index1; i <= index2; i++) {
@@ -183,7 +189,7 @@ public class Roundtrip {
 			verbrauchsKosten = verbrauchsKosten + journeys.get(i).getEnergyConsumption();
 			personalkosten = personalkosten + journeys.get(i).getRuntime();
 		}
-		return verbrauchsKosten * 0.1 + personalkosten * 20 / 60 / 1000 / 1000;
+		return (verbrauchsKosten * 0.1) + ((personalkosten * 0.001) / 60 / 60 * 20);
 	}
 	
 	public double getKostenMitLadestationen() {
@@ -196,19 +202,21 @@ public class Roundtrip {
 			if(!this.getLaden().contains(null)){
 				int test = this.getLaden().get(i).getFrequency();
 				if(test == 0){
-					System.err.println("Frequenz = 0 an Ladestation");
+					this.getLaden().remove(i);
+					//System.err.println("Frequenz = 0 an Ladestation " + this.getLaden().get(i).getId());
 				}
-				ladestationsAnteil = ladestationsAnteil + 250000*(1.0/test);// Kosten fuer Ladestationen werden anteilig auf die nutzenden Fahrzeugumlaeufe verteilt
+				double divisor = 1.0 / test;
+				ladestationsAnteil = ladestationsAnteil + 250000 * (divisor);// Kosten fuer Ladestationen werden anteilig auf die nutzenden Fahrzeugumlaeufe verteilt
 			}	 
 		}
-		double personalkosten = 0;
+		double personalkosten = 0.0;
 		for (int i = 0; i < journeys.size(); i++) {
 			verbrauchsKosten = verbrauchsKosten + journeys.get(i).getEnergyConsumption();
 			personalkosten = personalkosten + journeys.get(i).getRuntime();
 		}
-		personalkosten = personalkosten * 20 / 1000 / 60 / 60;
+		personalkosten = (personalkosten * 0.001) / 60 / 60 * 20;
 		verbrauchsKosten = verbrauchsKosten * 0.1;
-		return verbrauchsKosten + personalkosten + ladestationsAnteil;
+		return verbrauchsKosten + personalkosten + ladestationsAnteil + 400000;
 	}
 
 	public int getIndexOfJourney(Journey j){
@@ -218,6 +226,23 @@ public class Roundtrip {
 				break;
 			}
 			result ++;
+		}
+		return result;
+	}
+	
+	public String getDepot(){
+		if(!(journeys.getFirst().getFromStopId().equals(journeys.getLast().getToStopId()))){
+			System.err.println("Start- und Enddepot sind nicht gleich!");
+		}
+		return journeys.getFirst().getFromStopId();
+	}
+	
+	public int getNumberOfServicejourneys(){
+		int result = 0;
+		for (int i = 0; i < journeys.size(); i++) {
+			if(journeys.get(i) instanceof Servicejourney){
+				result ++;
+			}
 		}
 		return result;
 	}
