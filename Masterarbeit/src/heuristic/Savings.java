@@ -53,9 +53,6 @@ public class Savings {
 		int iteration = 0;
 		
 		do {
-			if(iteration == 621){
-				System.out.println();
-			}
 			savingsMatrix = neuerUmlaufplan(savingsMatrix);
 			valueSaving = 0.0;
 			for (Entry<String, Double> e: savingsMatrix.entrySet()){ 

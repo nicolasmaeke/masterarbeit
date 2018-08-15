@@ -45,7 +45,7 @@ public class VariableNeighborhoodSearch {
 			shaking();
 
 			bestImprovement(kMax);
-
+			
 			if(localBest.getTotalCosts() <= globalBest.getTotalCosts()){
 				if(localBest.getTotalCosts() <= shaking.getTotalCosts()){ 
 					globalBest = clone.deepClone(localBest);
@@ -193,7 +193,7 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 
-						listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), shaking.getStoppoints(), deadruntimes, servicejourneys);
+						listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), shaking.getStoppoints(), deadruntimes, servicejourneys);
 						if(listEins == null){ // Umlauf aufgrund Kapazitaet nicht moeglich
 							shaking = clone.deepClone(globalBest);
 							continue;
@@ -201,7 +201,7 @@ public class VariableNeighborhoodSearch {
 						einsNeu.setStellen(listEins.get(1));
 						einsNeu.setLaden(listEins.get(1));
 
-						listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), shaking.getStoppoints(), deadruntimes, servicejourneys);
+						listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), shaking.getStoppoints(), deadruntimes, servicejourneys);
 						if (listZwei == null) { // Umlauf aufgrund Kapazitaet nicht moeglich
 							shaking = clone.deepClone(globalBest);
 							continue;
@@ -338,7 +338,9 @@ public class VariableNeighborhoodSearch {
 				if(einsNeu != null){ // wenn null, dann ist der kleiner Umlauf weggefallen
 					localBest.getUmlaufplan().add(einsNeu); // fuege Eins in Lokalbest hinzu
 				}
-				localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
+				if(zweiNeu != null){
+					localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
+				}
 
 				if(localBest.isFeasible()){
 					System.out.println("ZweiOpt mit Nachbarschaft: " + nachbarschaft);
@@ -374,10 +376,9 @@ public class VariableNeighborhoodSearch {
 				if(einsNeu != null){ // wenn null, dann ist der kleiner Umlauf weggefallen
 					localBest.getUmlaufplan().add(einsNeu); // fuege Eins in Lokalbest hinzu
 				}
-				else{
-					System.out.println();
+				if(zweiNeu != null){
+					localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
 				}
-				localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
 
 				if(localBest.isFeasible()){
 					System.out.println("SfUmlegen mit Nachbarschaft: " + nachbarschaft);
@@ -547,7 +548,7 @@ public class VariableNeighborhoodSearch {
 											}
 										}
 
-										listEins = FeasibilityHelper.howIsRoundtourFeasible(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+										listEins = FeasibilityHelper.newLoadingstations(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 										if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 											localBest = clone.deepClone(shaking);
 											countLoading = 0;
@@ -615,7 +616,7 @@ public class VariableNeighborhoodSearch {
 											}
 										}
 
-										listEins = FeasibilityHelper.howIsRoundtourFeasible(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+										listEins = FeasibilityHelper.newLoadingstations(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 										if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 											localBest = clone.deepClone(shaking);
 											countLoading = 0;
@@ -680,7 +681,7 @@ public class VariableNeighborhoodSearch {
 											}
 										}
 
-										listEins = FeasibilityHelper.howIsRoundtourFeasible(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+										listEins = FeasibilityHelper.newLoadingstations(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 										if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 											localBest = clone.deepClone(shaking);
 											setRoundtripsAgain = true;
@@ -736,7 +737,7 @@ public class VariableNeighborhoodSearch {
 									}
 								}
 
-								listZwei = FeasibilityHelper.howIsRoundtourFeasible(newBig.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+								listZwei = FeasibilityHelper.newLoadingstations(newBig.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 								if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 									localBest = clone.deepClone(shaking);
 									setRoundtripsAgain = true;
@@ -827,8 +828,15 @@ public class VariableNeighborhoodSearch {
 		double savings = 0.0;
 		Verbesserungsobjekt result = new Verbesserungsobjekt(savings, null, null, null, null); // Initiales Verbesserungsobjekt
 
-		Roundtrip eins = localBest.getUmlaufplan().get(index1); // 
-		Roundtrip zwei = localBest.getUmlaufplan().get(index2); // 
+		Roundtrip eins = localBest.getUmlaufplan().get(index1); 
+		Roundtrip zwei = localBest.getUmlaufplan().get(index2); 
+		Roundtrip smallerTrip = null;
+		if (eins.getJourneys().size() <= zwei.getJourneys().size()) {
+			smallerTrip = eins;
+		}
+		else{
+			smallerTrip = zwei;
+		}
 
 		double currentCostValue = eins.getKostenMitLadestationen() + zwei.getKostenMitLadestationen(); //aktuelle Gesamtkosten von Fahrzeugumlauf eins und zwei
 		double initialCostValue = currentCostValue;
@@ -892,7 +900,7 @@ public class VariableNeighborhoodSearch {
 							//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
 						}
 					}
-					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 						localBest = clone.deepClone(shaking);
 						setRoundtripsAgain = true;
@@ -970,8 +978,8 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 
-						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
-						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 							localBest = clone.deepClone(shaking);
 							setRoundtripsAgain = true;
@@ -1086,7 +1094,7 @@ public class VariableNeighborhoodSearch {
 							//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
 						}
 					}
-					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 						localBest = clone.deepClone(shaking);
 						setRoundtripsAgain = true;
@@ -1164,8 +1172,8 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 
-						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
-						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 							localBest = clone.deepClone(shaking);
 							setRoundtripsAgain = true;
@@ -1289,13 +1297,13 @@ public class VariableNeighborhoodSearch {
 								}
 							}
 
-							ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 							if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(shaking);
 								setRoundtripsAgain = true;
 								continue;
 							}
-							ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 							if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(shaking);
 								setRoundtripsAgain = true;
@@ -1410,7 +1418,7 @@ public class VariableNeighborhoodSearch {
 						}
 					}
 
-					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 						localBest = clone.deepClone(shaking);
 						setRoundtripsAgain = true;
@@ -1488,8 +1496,8 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 
-						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
-						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 							localBest = clone.deepClone(shaking);
 							setRoundtripsAgain = true;
@@ -1605,7 +1613,7 @@ public class VariableNeighborhoodSearch {
 						}
 					}
 
-					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+					ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 						localBest = clone.deepClone(shaking);
 						setRoundtripsAgain = true;
@@ -1683,8 +1691,8 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 
-						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
-						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+						ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
 							localBest = clone.deepClone(shaking);
 							setRoundtripsAgain = true;
@@ -1805,13 +1813,13 @@ public class VariableNeighborhoodSearch {
 								}
 							}
 
-							ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.howIsRoundtourFeasible(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 							if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(shaking);
 								setRoundtripsAgain = true;
 								continue;
 							}
-							ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.howIsRoundtourFeasible(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
 							if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(shaking);
 								setRoundtripsAgain = true;
@@ -1863,7 +1871,21 @@ public class VariableNeighborhoodSearch {
 			}
 		}
 		if(!eins.equals(betterEins) && betterEins != null){ // falls mindestens eine Verbesserung vorhanden ist, wird die Beste zurueckgegeben
-			savings = initialCostValue - currentCostValue;
+			Roundtrip newSmallerTrip = null;
+			double penaltyFactor = 0.0;
+			if(betterZwei != null){
+				if (betterEins.getJourneys().size() <= betterZwei.getJourneys().size()) {
+					newSmallerTrip = betterEins;
+				}
+				else{
+					newSmallerTrip = betterZwei;
+				}
+				if(newSmallerTrip.getJourneys().size() > smallerTrip.getJourneys().size()){
+					penaltyFactor = newSmallerTrip.getJourneys().size() - smallerTrip.getJourneys().size();
+				}
+			}
+			double penaltyCosts = (penaltyFactor*400000*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
+			savings = initialCostValue - currentCostValue - penaltyCosts;
 			result.setSavings(savings);
 			result.setEins(betterEins);
 			result.setZwei(betterZwei);

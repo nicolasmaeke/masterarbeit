@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+
+import helper.FeasibilityHelper;
+
 import java.util.Map.Entry;
 
 public class Schedule {
@@ -108,6 +111,9 @@ public class Schedule {
 			next = null;
 			runtime = 0.0;
 			current = umlaufplan.get(i);
+			if(current.getJourneys() == null){
+				System.err.println();
+			}
 			startDepot = current.getJourneys().getFirst().getFromStopId();
 			EndDepot = current.getJourneys().getLast().getToStopId();
 			if(!startDepot.equals(EndDepot)){
@@ -210,5 +216,26 @@ public class Schedule {
 		}
 		System.out.println("Gesamtanzahl Ladevorgaenge: " + counter);
 	}
+
+	/**
+	public void setFrequencies(HashMap<String, Deadruntime> deadruntimes) {
+		ArrayList<Stoppoint> newStoppoints = new ArrayList<>();
+		for (int i = 0; i < umlaufplan.size(); i++) {
+			for (int j = 0; j < umlaufplan.get(i).getLaden().size(); j++) {
+				if (!newStoppoints.contains(umlaufplan.get(i).getLaden().get(j))) {
+					newStoppoints.add(umlaufplan.get(i).getLaden().get(j));
+				}
+				
+			}
+		}
+		// Stoppoints zuruecksetzen
+		for(Entry<String, Stoppoint> e: stoppoints.entrySet()){
+			if (!e.getValue().isDepot()) {
+				e.getValue().setLoadingstation(false);
+			}
+			e.getValue().setFrequency(0);
+		}
+	}
+	*/
 
 }
