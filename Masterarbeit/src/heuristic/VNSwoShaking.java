@@ -20,7 +20,6 @@ public class VNSwoShaking {
 
 	Schedule localBest; // lokal beste Loesung: die beste Loesung der aktuellen Iteration
 	Schedule globalBest; // global beste Loesung: die beste jemals gefundene Loesung
-	//Schedule shaking; // Loesung nach dem Shaking: Verschlechterung gegenueber localBest moeglich
 	Cloner clone = new Cloner();
 	public HashMap<String, Deadruntime> deadruntimes;
 	public HashMap<String, Servicejourney> servicejourneys;
@@ -37,19 +36,13 @@ public class VNSwoShaking {
 
 	public void startVNS(int iterations, int kMax){
 		int i = 1;
-		int countLoading = 0;
-		for(Entry <String, Stoppoint> e: globalBest.getStoppointsWithLoadingStations().entrySet()){
-			countLoading = countLoading + e.getValue().getFrequency();
-		}
 		while(i <= iterations){
-		
 			bestImprovement(kMax);
-
-			if(localBest.getTotalCosts() <= globalBest.getTotalCosts()){ 
-				globalBest = clone.deepClone(localBest);
-				globalBest.calculateCosts();
-				globalBest.printLoadingstations();
-				globalBest.printUmlaufplan();
+			if(localBest.getTotalCosts() <= globalBest.getTotalCosts()){
+					globalBest = clone.deepClone(localBest);
+					globalBest.calculateCosts();
+					globalBest.printLoadingstations();
+					globalBest.printUmlaufplan();			
 			}
 			System.out.println("Iteration: " + i);
 			i++;
@@ -88,8 +81,9 @@ public class VNSwoShaking {
 				randomNeu = (int)(Math.random()*localBest.getUmlaufplan().size()); 
 			}
 			randoms.add(randomNeu); 
-			/**
+			
 			// setze Methode Zweioptverbesserung fuer alle Paare von zufaellig gezogenen Umlaeufen ein
+			
 			for (int i = 0; i < randoms.size()-1; i++) {
 				Verbesserungsobjekt tempZweiOpt = zweiOpt(randoms.get(i), randoms.get(randoms.size()-1)); 
 				if(tempZweiOpt != null){ // falls eine Verbesserung vorhanden ist
@@ -101,7 +95,7 @@ public class VNSwoShaking {
 					}
 				}
 			}	
-			*/
+			
 			// setze Methode sfUmlegen fuer alle Paare von zufaellig gezogenen Umlaeufen ein
 			for (int i = 0; i < randoms.size()-1; i++) {
 				Verbesserungsobjekt tempSfUmlegen = sfUmlegen(randoms.get(i), randoms.get(randoms.size()-1));
@@ -114,7 +108,7 @@ public class VNSwoShaking {
 					}
 				}
 			}
-			
+
 			if(bestZweiOpt.getSavings() == 0 && bestSfUmlegen.getSavings() == 0){ // wenn in der aktuelle Nachbarschaft nichts gespart wird
 				System.out.println("Groesse der Nachbarschaft: " + nachbarschaft);
 				nachbarschaft++; // erhoehe die Nachbarschaft um 1
@@ -143,15 +137,18 @@ public class VNSwoShaking {
 				if(einsNeu != null){ // wenn null, dann ist der kleiner Umlauf weggefallen
 					localBest.getUmlaufplan().add(einsNeu); // fuege Eins in Lokalbest hinzu
 				}
-				localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
+				if(zweiNeu != null){
+					localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
+				}
 
 				if(localBest.isFeasible()){
 					System.out.println("ZweiOpt mit Nachbarschaft: " + nachbarschaft);
+					localBest.setNumberOfLoadingStations(localBest.getStoppointsWithLoadingStations().size());
+					localBest.calculateCosts();
 					break;
 				}
 				else{
 					localBest = clone.deepClone(globalBest);
-					//localBest = clone.deepClone(globalBest);
 				}
 			}
 			else{ // wenn durch das SfUmlegen mehr gespart wird als durch ZweiOpt
@@ -178,24 +175,22 @@ public class VNSwoShaking {
 				if(einsNeu != null){ // wenn null, dann ist der kleiner Umlauf weggefallen
 					localBest.getUmlaufplan().add(einsNeu); // fuege Eins in Lokalbest hinzu
 				}
-				else{
-					System.out.println();
+				if(zweiNeu != null){
+					localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
 				}
-				localBest.getUmlaufplan().add(zweiNeu); // fuege Zwei in Lokalbest hinzu
 
 				if(localBest.isFeasible()){
 					System.out.println("SfUmlegen mit Nachbarschaft: " + nachbarschaft);
+					localBest.setNumberOfLoadingStations(localBest.getStoppointsWithLoadingStations().size());
+					//localBest.setTotalCosts(globalBest.getTotalCosts() - savings);
+					localBest.calculateCosts();
 					break;
 				}
 				else{
 					localBest = clone.deepClone(globalBest);
-					//localBest = clone.deepClone(globalBest);
 				}
 			}
 		}
-		localBest.setNumberOfLoadingStations(localBest.getStoppointsWithLoadingStations().size());
-		//localBest.calculateCosts();
-		localBest.setTotalCosts(globalBest.getTotalCosts() - savings);
 		return localBest;
 	}
 
@@ -207,10 +202,6 @@ public class VNSwoShaking {
 	 */
 	private Verbesserungsobjekt sfUmlegen(Integer index1, Integer index2) {
 
-		int countLoading = 0;
-		for(Entry <String, Stoppoint> e: localBest.getStoppointsWithLoadingStations().entrySet()){
-			countLoading = countLoading + e.getValue().getFrequency();
-		}
 		Verbesserungsobjekt result = new Verbesserungsobjekt(0.0, null, null, null, null); // Initiales Verbesserungsobjekt
 
 		Roundtrip small;
@@ -248,8 +239,8 @@ public class VNSwoShaking {
 			}
 		}
 
-		ArrayList<ArrayList<Stoppoint>> listEins = new ArrayList<ArrayList<Stoppoint>>();
-		ArrayList<ArrayList<Stoppoint>> listZwei = new ArrayList<ArrayList<Stoppoint>>();
+		Roundtrip listEins = null;
+		Roundtrip listZwei = null;
 
 		for (int k = 0; k < sjOfSmall.size(); k++) { // fuer jede SF aus dem kleineren Umlauf 
 			Servicejourney kleinSf = sjOfSmall.get(k);
@@ -327,8 +318,8 @@ public class VNSwoShaking {
 									else{
 
 										ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
-										if (!small.getLaden().contains(null)) {
-											decreaseFrequencyAt.addAll(small.getLaden());
+										if (!small.getCharge().contains(null)) {
+											decreaseFrequencyAt.addAll(small.getCharge());
 										}
 										for (int i11 = 0; i11 < decreaseFrequencyAt.size(); i11++) {
 											if (decreaseFrequencyAt.contains(null)) {
@@ -340,10 +331,10 @@ public class VNSwoShaking {
 												current.setLoadingstation(false);
 												localBest.getStoppointsWithLoadingStations().remove(current.getId());
 												for (int j = 0; j < localBest.getUmlaufplan().size(); j++) {
-													for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getLaden().size(); j2++) {
-														if (localBest.getUmlaufplan().get(j).getLaden().get(j2) != null){
-															if (localBest.getUmlaufplan().get(j).getLaden().get(j2).getId().equals(current.getId())) {
-																localBest.getUmlaufplan().get(j).getLaden().remove(j2);
+													for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getCharge().size(); j2++) {
+														if (localBest.getUmlaufplan().get(j).getCharge().get(j2) != null){
+															if (localBest.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+																localBest.getUmlaufplan().get(j).getCharge().remove(j2);
 															}
 														}
 													}
@@ -352,30 +343,26 @@ public class VNSwoShaking {
 											}
 										}
 
-										listEins = FeasibilityHelper.newLoadingstations(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+										listEins = FeasibilityHelper.roundtripWithCharging(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, small.getId());
 										if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 											localBest = clone.deepClone(globalBest);
 											setRoundtripsAgain = true;
 											continue;
 										}
-										for (int i1 = 0; i1 < listEins.get(1).size(); i1++) {
-											Stoppoint x = (Stoppoint) listEins.get(1).get(i1);
+										for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+											Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 											if(x.isLoadingstation() == false){
 												x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 												x.setFrequency(1);
-												localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+												localBest.getStoppointsWithLoadingStations().add(x);
 												//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 											}
 											else{
 												x.setFrequency(x.getFrequency()+1);
 											}
 										}
-										countLoading = 0;
-										for(Entry <String, Stoppoint> e: localBest.getStoppointsWithLoadingStations().entrySet()){
-											countLoading = countLoading + e.getValue().getFrequency();
-										}
-										newSmall.setStellen(listEins.get(1));
-										newSmall.setLaden(listEins.get(1));
+										newSmall.setCharge(listEins.getCharge());
+										newSmall.setBuild(listEins.getBuild());
 									}
 								}
 								else if(indexKlein == 1){ // falls die erste SF geloescht wird
@@ -394,8 +381,8 @@ public class VNSwoShaking {
 									else{
 
 										ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
-										if (!small.getLaden().contains(null)) {
-											decreaseFrequencyAt.addAll(small.getLaden());
+										if (!small.getCharge().contains(null)) {
+											decreaseFrequencyAt.addAll(small.getCharge());
 										}
 										for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
 											if (decreaseFrequencyAt.contains(null)) {
@@ -407,10 +394,10 @@ public class VNSwoShaking {
 												current.setLoadingstation(false);
 												localBest.getStoppointsWithLoadingStations().remove(current.getId());
 												for (int j = 0; j < localBest.getUmlaufplan().size(); j++) {
-													for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getLaden().size(); j2++) {
-														if (localBest.getUmlaufplan().get(j).getLaden().get(j2) != null){
-															if (localBest.getUmlaufplan().get(j).getLaden().get(j2).getId().equals(current.getId())) {
-																localBest.getUmlaufplan().get(j).getLaden().remove(j2);
+													for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getCharge().size(); j2++) {
+														if (localBest.getUmlaufplan().get(j).getCharge().get(j2) != null){
+															if (localBest.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+																localBest.getUmlaufplan().get(j).getCharge().remove(j2);
 															}
 														}
 													}
@@ -419,30 +406,26 @@ public class VNSwoShaking {
 											}
 										}
 
-										listEins = FeasibilityHelper.newLoadingstations(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+										listEins = FeasibilityHelper.roundtripWithCharging(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, small.getId());
 										if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 											localBest = clone.deepClone(globalBest);
 											setRoundtripsAgain = true;
 											continue;
 										}
-										for (int i1 = 0; i1 < listEins.get(1).size(); i1++) {
-											Stoppoint x = (Stoppoint) listEins.get(1).get(i1);
+										for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+											Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 											if(x.isLoadingstation() == false){
 												x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 												x.setFrequency(1);
-												localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+												localBest.getStoppointsWithLoadingStations().add(x);
 												//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 											}
 											else{
 												x.setFrequency(x.getFrequency()+1);
 											}
 										}
-										countLoading = 0;
-										for(Entry <String, Stoppoint> e: localBest.getStoppointsWithLoadingStations().entrySet()){
-											countLoading = countLoading + e.getValue().getFrequency();
-										}
-										newSmall.setStellen(listEins.get(1));
-										newSmall.setLaden(listEins.get(1));
+										newSmall.setCharge(listEins.getCharge());
+										newSmall.setBuild(listEins.getBuild());
 									}
 								}
 								else if(indexKlein == small.getJourneys().size()-2){ // falls die letzte SF geloescht wird
@@ -458,8 +441,8 @@ public class VNSwoShaking {
 									else{
 
 										ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
-										if (!small.getLaden().contains(null)) {
-											decreaseFrequencyAt.addAll(small.getLaden());
+										if (!small.getCharge().contains(null)) {
+											decreaseFrequencyAt.addAll(small.getCharge());
 										}
 										for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
 											if (decreaseFrequencyAt.contains(null)) {
@@ -471,10 +454,10 @@ public class VNSwoShaking {
 												current.setLoadingstation(false);
 												localBest.getStoppointsWithLoadingStations().remove(current.getId());
 												for (int j = 0; j < localBest.getUmlaufplan().size(); j++) {
-													for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getLaden().size(); j2++) {
-														if (localBest.getUmlaufplan().get(j).getLaden().get(j2) != null){
-															if (localBest.getUmlaufplan().get(j).getLaden().get(j2).getId().equals(current.getId())) {
-																localBest.getUmlaufplan().get(j).getLaden().remove(j2);
+													for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getCharge().size(); j2++) {
+														if (localBest.getUmlaufplan().get(j).getCharge().get(j2) != null){
+															if (localBest.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+																localBest.getUmlaufplan().get(j).getCharge().remove(j2);
 															}
 														}
 													}
@@ -483,30 +466,26 @@ public class VNSwoShaking {
 											}
 										}
 
-										listEins = FeasibilityHelper.newLoadingstations(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+										listEins = FeasibilityHelper.roundtripWithCharging(newSmall.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, small.getId());
 										if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 											localBest = clone.deepClone(globalBest);
 											setRoundtripsAgain = true;
 											continue;
 										}
-										for (int i1 = 0; i1 < listEins.get(1).size(); i1++) {
-											Stoppoint x = (Stoppoint) listEins.get(1).get(i1);
+										for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+											Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 											if(x.isLoadingstation() == false){
 												x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 												x.setFrequency(1);
-												localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+												localBest.getStoppointsWithLoadingStations().add(x);
 												//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 											}
 											else{
 												x.setFrequency(x.getFrequency()+1);
 											}
 										}
-										countLoading = 0;
-										for(Entry <String, Stoppoint> e: localBest.getStoppointsWithLoadingStations().entrySet()){
-											countLoading = countLoading + e.getValue().getFrequency();
-										}
-										newSmall.setStellen(listEins.get(1));
-										newSmall.setLaden(listEins.get(1));
+										newSmall.setCharge(listEins.getCharge());
+										newSmall.setBuild(listEins.getBuild());
 									}
 								}
 								else{
@@ -516,9 +495,7 @@ public class VNSwoShaking {
 							if(newBig.isFeasible()){ // wenn newBig feasible ist
 
 								ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
-								if (!big.getLaden().contains(null)) {
-									decreaseFrequencyAt.addAll(big.getLaden());
-								}
+								decreaseFrequencyAt.addAll(big.getCharge());
 								for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
 									if (decreaseFrequencyAt.contains(null)) {
 										System.err.println("Attention!");
@@ -529,10 +506,10 @@ public class VNSwoShaking {
 										current.setLoadingstation(false);
 										localBest.getStoppointsWithLoadingStations().remove(current.getId());
 										for (int j = 0; j < localBest.getUmlaufplan().size(); j++) {
-											for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getLaden().size(); j2++) {
-												if (localBest.getUmlaufplan().get(j).getLaden().get(j2) != null){
-													if (localBest.getUmlaufplan().get(j).getLaden().get(j2).getId().equals(current.getId())) {
-														localBest.getUmlaufplan().get(j).getLaden().remove(j2);
+											for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getCharge().size(); j2++) {
+												if (localBest.getUmlaufplan().get(j).getCharge().get(j2) != null){
+													if (localBest.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+														localBest.getUmlaufplan().get(j).getCharge().remove(j2);
 													}
 												}
 											}
@@ -541,26 +518,26 @@ public class VNSwoShaking {
 									}
 								}
 
-								listZwei = FeasibilityHelper.newLoadingstations(newBig.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
-								if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich	
+								listZwei = FeasibilityHelper.roundtripWithCharging(newBig.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, big.getId());
+								if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 									localBest = clone.deepClone(globalBest);
 									setRoundtripsAgain = true;
 									continue;
 								}
-								for (int i1 = 0; i1 < listZwei.get(1).size(); i1++) {
-									Stoppoint x = (Stoppoint) listZwei.get(1).get(i1);
+								for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+									Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 									if(x.isLoadingstation() == false){
 										x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 										x.setFrequency(1);
-										localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+										localBest.getStoppointsWithLoadingStations().add(x);
 										//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 									}
 									else{
 										x.setFrequency(x.getFrequency()+1);
 									}
 								}
-								newBig.setStellen(listZwei.get(1));
-								newBig.setLaden(listZwei.get(1));
+								newBig.setCharge(listZwei.getCharge());
+								newBig.setBuild(listZwei.getBuild());
 
 								double newCosts = 0.0;
 								double fictiveSavings = 0.0;
@@ -595,11 +572,6 @@ public class VNSwoShaking {
 										result.setEins(newSmall);
 									}
 								}
-
-								countLoading = 0;
-								for(Entry <String, Stoppoint> e: localBest.getStoppointsWithLoadingStations().entrySet()){
-									countLoading = countLoading + e.getValue().getFrequency();
-								}
 								return result;
 							}
 							else{
@@ -620,8 +592,15 @@ public class VNSwoShaking {
 		double savings = 0.0;
 		Verbesserungsobjekt result = new Verbesserungsobjekt(savings, null, null, null, null); // Initiales Verbesserungsobjekt
 
-		Roundtrip eins = localBest.getUmlaufplan().get(index1); // 
-		Roundtrip zwei = localBest.getUmlaufplan().get(index2); // 
+		Roundtrip eins = localBest.getUmlaufplan().get(index1); 
+		Roundtrip zwei = localBest.getUmlaufplan().get(index2); 
+		Roundtrip smallerTrip = null;
+		if (eins.getJourneys().size() <= zwei.getJourneys().size()) {
+			smallerTrip = eins;
+		}
+		else{
+			smallerTrip = zwei;
+		}
 
 		double currentCostValue = eins.getKostenMitLadestationen() + zwei.getKostenMitLadestationen(); //aktuelle Gesamtkosten von Fahrzeugumlauf eins und zwei
 		double initialCostValue = currentCostValue;
@@ -645,9 +624,377 @@ public class VNSwoShaking {
 			}
 		}
 
+		
+		// versuche erste SF von Eins mit erster SF von Zwei zu vertauschen
+		if(FeasibilityHelper.compatibility(sfEins.getFirst(), sfZwei.getFirst(), deadruntimes)){
+			if(sfEins.size() == 1){ // es wuerde ein Umlauf wegfallen
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getFirst());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getFirst());
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, indexOfSfEins));
+				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+					if (!eins.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(eins.getCharge());
+					}
+					if (!zwei.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(zwei.getCharge());
+					}
+					for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+						if (decreaseFrequencyAt.contains(null)) {
+							System.err.println("Attention!");
+						}
+						Stoppoint current = decreaseFrequencyAt.get(i1);
+						current.setFrequency(current.getFrequency()-1);
+						if(current.getFrequency() == 0){
+							current.setLoadingstation(false);
+							localBest.getStoppointsWithLoadingStations().remove(current.getId());
+							for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+								for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+									if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+											localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+										}
+									}
+								}
+							}
+							//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+						}
+					}
+					Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+						localBest = clone.deepClone(globalBest);
+						setRoundtripsAgain = true;
+					}
+					else{
+						for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+							if(x.isLoadingstation() == false){
+								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								x.setFrequency(1);
+								localBest.getStoppointsWithLoadingStations().add(x);
+								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+							}
+							else{
+								x.setFrequency(x.getFrequency()+1);
+							}
+						}
+						einsNeu.setCharge(listEins.getCharge());
+						einsNeu.setBuild(listEins.getBuild());
+						
+						// neue Umlaeufe speichern, falls besser
+						double newCostValue = einsNeu.getKostenMitLadestationen();
+						if(newCostValue < currentCostValue){
+							currentCostValue = newCostValue;
+							betterEins = einsNeu;
+						}
+						else{
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+					}
+				}
+			}
+			else{
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getFirst());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getFirst());
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, indexOfSfEins));
+				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
+					deadruntimeId = zwei.getDepot() + eins.getAtIndex(eins.getIndexOfJourney(sfEins.get(1))).getFromStopId(); 
+					// neue Ausrueckfahrt hinzufuegen
+					zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+					zweiNeu.getJourneys().addAll(eins.getFahrtenVonBis(eins.getIndexOfJourney(sfEins.get(1)), eins.getJourneys().size()-1));
+					if(zweiNeu.isFeasible()){
+						ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+						if (!eins.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(eins.getBuild());
+						}
+						if (!zwei.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(zwei.getBuild());
+						}
+						for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+							if (decreaseFrequencyAt.contains(null)) {
+								System.err.println("Attention!");
+							}
+							Stoppoint current = decreaseFrequencyAt.get(i1);
+							current.setFrequency(current.getFrequency()-1);
+							if(current.getFrequency() == 0){
+								current.setLoadingstation(false);
+								localBest.getStoppointsWithLoadingStations().remove(current.getId());
+								for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+									for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+											if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+												localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+											}
+										}
+									}
+								}
+								//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+							}
+						}
+
+						Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+						Roundtrip listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
+						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+						else{
+							for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							einsNeu.setCharge(listEins.getCharge());
+							einsNeu.setBuild(listEins.getBuild());
+							
+							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							zweiNeu.setCharge(listZwei.getCharge());
+							zweiNeu.setBuild(listZwei.getBuild());
+
+							// neue Umlaeufe speichern, falls besser
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							if(newCostValue < currentCostValue){
+								currentCostValue = newCostValue;
+								betterEins = einsNeu;
+								betterZwei = zweiNeu;
+							}
+							else{
+								localBest = clone.deepClone(globalBest);
+								setRoundtripsAgain = true;
+							}
+						}
+			}
+			
+				}
+			}
+		}
+		
+		// versuche letzte SF von Eins mit letzter SF von Zwei zu vertauschen
+		if(FeasibilityHelper.compatibility(sfEins.getLast(), sfZwei.getLast(), deadruntimes)){
+			if(setRoundtripsAgain == true){
+				for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+					if(localBest.getUmlaufplan().get(j1).getId() == eins.getId()){
+						eins = localBest.getUmlaufplan().get(j1); 
+					}
+					if(localBest.getUmlaufplan().get(j1).getId() == zwei.getId()){
+						zwei = localBest.getUmlaufplan().get(j1); 
+					}
+				}
+				sfEins.clear();
+				for (int i1 = 0; i1 < eins.getJourneys().size(); i1++) { 
+					if(eins.getJourneys().get(i1) instanceof Servicejourney){ // es werden nur Servicefahrten betrachtet
+						sfEins.add((Servicejourney) eins.getJourneys().get(i1));
+					}
+				}
+				sfZwei.clear();
+				for (int j1 = 0; j1 < zwei.getJourneys().size(); j1++) { 
+					if(zwei.getJourneys().get(j1) instanceof Servicejourney){ // es werden nur Servicefahrten betrachtet
+						sfZwei.add((Servicejourney) zwei.getJourneys().get(j1));
+					}
+				}
+				setRoundtripsAgain = false;
+			}
+			if(sfZwei.size() == 1){ // in diesem Fall wuerde ein Umlauf wegfallen
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getLast());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getLast());
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, indexOfSfEins));
+				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+					if (!eins.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(eins.getCharge());
+					}
+					if (!zwei.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(zwei.getCharge());
+					}
+					for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+						if (decreaseFrequencyAt.contains(null)) {
+							System.err.println("Attention!");
+						}
+						Stoppoint current = decreaseFrequencyAt.get(i1);
+						current.setFrequency(current.getFrequency()-1);
+						if(current.getFrequency() == 0){
+							current.setLoadingstation(false);
+							localBest.getStoppointsWithLoadingStations().remove(current.getId());
+							for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+								for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+									if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+											localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+										}
+									}
+								}
+							}
+							//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+						}
+					}
+					Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+						localBest = clone.deepClone(globalBest);
+						setRoundtripsAgain = true;
+					}
+					else{
+						for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+							if(x.isLoadingstation() == false){
+								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								x.setFrequency(1);
+								localBest.getStoppointsWithLoadingStations().add(x);
+								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+							}
+							else{
+								x.setFrequency(x.getFrequency()+1);
+							}
+						}
+						einsNeu.setCharge(listEins.getCharge());
+						einsNeu.setBuild(listEins.getBuild());
+						
+						// neue Umlaeufe speichern, falls besser
+						double newCostValue = einsNeu.getKostenMitLadestationen();
+						if(newCostValue < currentCostValue){
+							currentCostValue = newCostValue;
+							betterEins = einsNeu;
+						}
+						else{
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+					}
+				}
+			}
+			else{
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getLast());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getLast());
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, indexOfSfEins));
+				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
+					zweiNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, zwei.getIndexOfJourney(sfZwei.get(sfZwei.size()-2))));
+					deadruntimeId = zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(sfZwei.size()-2))).getToStopId() + zwei.getDepot(); 
+					// neue Einrueckfahrt hinzufuegen
+					zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+					if(zweiNeu.isFeasible()){
+						ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+						if (!eins.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(eins.getCharge());
+						}
+						if (!zwei.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(zwei.getCharge());
+						}
+						for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+							if (decreaseFrequencyAt.contains(null)) {
+								System.err.println("Attention!");
+							}
+							Stoppoint current = decreaseFrequencyAt.get(i1);
+							current.setFrequency(current.getFrequency()-1);
+							if(current.getFrequency() == 0){
+								current.setLoadingstation(false);
+								localBest.getStoppointsWithLoadingStations().remove(current.getId());
+								for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+									for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+											if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+												localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+											}
+										}
+									}
+								}
+								//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+							}
+						}
+
+						Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+						Roundtrip listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
+						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+						else{
+							for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							einsNeu.setCharge(listEins.getCharge());
+							einsNeu.setBuild(listEins.getBuild());
+							
+							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							zweiNeu.setCharge(listZwei.getCharge());
+							zweiNeu.setBuild(listZwei.getBuild());
+
+							// neue Umlaeufe speichern, falls besser
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							if(newCostValue < currentCostValue){
+								currentCostValue = newCostValue;
+								betterEins = einsNeu;
+								betterZwei = zweiNeu;
+							}
+							else{
+								localBest = clone.deepClone(globalBest);
+								setRoundtripsAgain = true;
+							}
+						}
+					}
+			}
+			
+			}
+		}
+		
 		// versuche Kantentausch mit allen Paaren von inneren Servicefahrten (i nach j)
-		for (int i = 1; i < sfEins.size()-1; i++) { 
-			for (int j = 1; j < sfZwei.size()-1; j++) {
+		for (int i = 0; i < sfEins.size()-1; i++) { 
+			for (int j = 1; j < sfZwei.size(); j++) {
 				if(setRoundtripsAgain == true){
 					for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
 						if(localBest.getUmlaufplan().get(j1).getId() == eins.getId()){
@@ -688,11 +1035,11 @@ public class VNSwoShaking {
 						if(zweiNeu.isFeasible()){
 
 							ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
-							if (!eins.getLaden().contains(null)) {
-								decreaseFrequencyAt.addAll(eins.getLaden());
+							if (!eins.getCharge().contains(null)) {
+								decreaseFrequencyAt.addAll(eins.getCharge());
 							}
-							if (!zwei.getLaden().contains(null)) {
-								decreaseFrequencyAt.addAll(zwei.getLaden());
+							if (!zwei.getCharge().contains(null)) {
+								decreaseFrequencyAt.addAll(zwei.getCharge());
 							}
 							for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
 								if (decreaseFrequencyAt.contains(null)) {
@@ -704,10 +1051,10 @@ public class VNSwoShaking {
 									current.setLoadingstation(false);
 									localBest.getStoppointsWithLoadingStations().remove(current.getId());
 									for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
-										for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getLaden().size(); j2++) {
-											if (localBest.getUmlaufplan().get(j1).getLaden().get(j2) != null){
-												if (localBest.getUmlaufplan().get(j1).getLaden().get(j2).getId().equals(current.getId())) {
-													localBest.getUmlaufplan().get(j1).getLaden().remove(j2);
+										for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+											if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+												if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+													localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
 												}
 											}
 										}
@@ -716,46 +1063,47 @@ public class VNSwoShaking {
 								}
 							}
 
-							ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
 							if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(globalBest);
 								setRoundtripsAgain = true;
 								continue;
 							}
-							ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							Roundtrip listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
 							if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(globalBest);
 								setRoundtripsAgain = true;
 								continue;
 							}
-							for (int i1 = 0; i1 < listEins.get(1).size(); i1++) {
-								Stoppoint x = (Stoppoint) listEins.get(1).get(i1);
+							for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 									x.setFrequency(1);
-									localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+									localBest.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 								}
 								else{
 									x.setFrequency(x.getFrequency()+1);
 								}
 							}
-							einsNeu.setStellen(listEins.get(1));
-							einsNeu.setLaden(listEins.get(1));
-							for (int i1 = 0; i1 < listZwei.get(1).size(); i1++) {
-								Stoppoint x = (Stoppoint) listZwei.get(1).get(i1);
+							einsNeu.setCharge(listEins.getCharge());
+							einsNeu.setBuild(listEins.getBuild());
+							
+							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 									x.setFrequency(1);
-									localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+									localBest.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 								}
 								else{
 									x.setFrequency(x.getFrequency()+1);
 								}
 							}
-							zweiNeu.setStellen(listZwei.get(1));
-							zweiNeu.setLaden(listZwei.get(1));
+							zweiNeu.setCharge(listZwei.getCharge());
+							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
 							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
@@ -771,6 +1119,397 @@ public class VNSwoShaking {
 						}	
 					}
 				}
+			}
+		}
+		
+		// Kopie von oben fuer Rueckwaertskanten: versuche erste SF von Zwei mit erster SF von Eins zu vertauschen
+		if(FeasibilityHelper.compatibility(sfZwei.getFirst(), sfEins.getFirst(), deadruntimes)){
+			if(setRoundtripsAgain == true){
+				for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+					if(localBest.getUmlaufplan().get(j1).getId() == eins.getId()){
+						eins = localBest.getUmlaufplan().get(j1); 
+					}
+					if(localBest.getUmlaufplan().get(j1).getId() == zwei.getId()){
+						zwei = localBest.getUmlaufplan().get(j1); 
+					}
+				}
+				sfEins.clear();
+				for (int i1 = 0; i1 < eins.getJourneys().size(); i1++) { 
+					if(eins.getJourneys().get(i1) instanceof Servicejourney){ // es werden nur Servicefahrten betrachtet
+						sfEins.add((Servicejourney) eins.getJourneys().get(i1));
+					}
+				}
+				sfZwei.clear();
+				for (int j1 = 0; j1 < zwei.getJourneys().size(); j1++) { 
+					if(zwei.getJourneys().get(j1) instanceof Servicejourney){ // es werden nur Servicefahrten betrachtet
+						sfZwei.add((Servicejourney) zwei.getJourneys().get(j1));
+					}
+				}
+				setRoundtripsAgain = false;
+			}
+			if(sfZwei.size() == 1){ // es wuerde ein Umlauf wegfallen
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getFirst());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getFirst());
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, indexOfSfZwei));
+				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+					if (!eins.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(eins.getCharge());
+					}
+					if (!zwei.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(zwei.getCharge());
+					}
+					for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+						if (decreaseFrequencyAt.contains(null)) {
+							System.err.println("Attention!");
+						}
+						Stoppoint current = decreaseFrequencyAt.get(i1);
+						current.setFrequency(current.getFrequency()-1);
+						if(current.getFrequency() == 0){
+							current.setLoadingstation(false);
+							localBest.getStoppointsWithLoadingStations().remove(current.getId());
+							for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+								for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+									if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+											localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+										}
+									}
+								}
+							}
+							//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+						}
+					}
+
+					Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+						localBest = clone.deepClone(globalBest);
+						setRoundtripsAgain = true;
+					}
+					else{
+						for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+							if(x.isLoadingstation() == false){
+								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								x.setFrequency(1);
+								localBest.getStoppointsWithLoadingStations().add(x);
+								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+							}
+							else{
+								x.setFrequency(x.getFrequency()+1);
+							}
+						}
+						einsNeu.setCharge(listEins.getCharge());
+						einsNeu.setBuild(listEins.getBuild());
+						
+						// neue Umlaeufe speichern, falls besser
+						double newCostValue = einsNeu.getKostenMitLadestationen();
+						if(newCostValue < currentCostValue){
+							currentCostValue = newCostValue;
+							betterEins = einsNeu;
+						}
+						else{
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+					}
+				}
+			}
+			else{
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getFirst());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getFirst());
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, indexOfSfZwei));
+				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
+					deadruntimeId = zwei.getDepot() + zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(1))).getFromStopId(); 
+					// neue Ausrueckfahrt hinzufuegen
+					zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+					zweiNeu.getJourneys().addAll(zwei.getFahrtenVonBis(zwei.getIndexOfJourney(sfZwei.get(1)), zwei.getJourneys().size()-1));
+					if(zweiNeu.isFeasible()){
+						ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+						if (!eins.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(eins.getCharge());
+						}
+						if (!zwei.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(zwei.getCharge());
+						}
+						for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+							if (decreaseFrequencyAt.contains(null)) {
+								System.err.println("Attention!");
+							}
+							Stoppoint current = decreaseFrequencyAt.get(i1);
+							current.setFrequency(current.getFrequency()-1);
+							if(current.getFrequency() == 0){
+								current.setLoadingstation(false);
+								localBest.getStoppointsWithLoadingStations().remove(current.getId());
+								for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+									for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+											if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+												localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+											}
+										}
+									}
+								}
+								//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+							}
+						}
+
+						Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+						Roundtrip listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
+						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+						else{
+							for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							einsNeu.setCharge(listEins.getCharge());
+							einsNeu.setBuild(listEins.getBuild());
+							
+							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							zweiNeu.setCharge(listZwei.getCharge());
+							zweiNeu.setBuild(listZwei.getBuild());
+
+							// neue Umlaeufe speichern, falls besser
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							if(newCostValue < currentCostValue){
+								currentCostValue = newCostValue;
+								betterEins = einsNeu;
+								betterZwei = zweiNeu;
+							}
+							else{
+								localBest = clone.deepClone(globalBest);
+								setRoundtripsAgain = true;
+							}
+						}
+					}
+			}
+			
+			}
+		}
+		
+		//  Kopie von oben fuer Rueckwaertskanten: versuche letzte SF von Zwei mit letzter SF von Eins zu vertauschen
+		if(FeasibilityHelper.compatibility(sfZwei.getLast(), sfEins.getLast(), deadruntimes)){
+			if(setRoundtripsAgain == true){
+				for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+					if(localBest.getUmlaufplan().get(j1).getId() == eins.getId()){
+						eins = localBest.getUmlaufplan().get(j1); 
+					}
+					if(localBest.getUmlaufplan().get(j1).getId() == zwei.getId()){
+						zwei = localBest.getUmlaufplan().get(j1); 
+					}
+				}
+				sfEins.clear();
+				for (int i1 = 0; i1 < eins.getJourneys().size(); i1++) { 
+					if(eins.getJourneys().get(i1) instanceof Servicejourney){ // es werden nur Servicefahrten betrachtet
+						sfEins.add((Servicejourney) eins.getJourneys().get(i1));
+					}
+				}
+				sfZwei.clear();
+				for (int j1 = 0; j1 < zwei.getJourneys().size(); j1++) { 
+					if(zwei.getJourneys().get(j1) instanceof Servicejourney){ // es werden nur Servicefahrten betrachtet
+						sfZwei.add((Servicejourney) zwei.getJourneys().get(j1));
+					}
+				}
+				setRoundtripsAgain = false;
+			}
+			if(sfEins.size() == 1){ // in diesem Fall wuerde ein Umlauf wegfallen
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getLast());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getLast());
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, indexOfSfZwei));
+				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+					if (!eins.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(eins.getCharge());
+					}
+					if (!zwei.getCharge().contains(null)) {
+						decreaseFrequencyAt.addAll(zwei.getCharge());
+					}
+					for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+						if (decreaseFrequencyAt.contains(null)) {
+							System.err.println("Attention!");
+						}
+						Stoppoint current = decreaseFrequencyAt.get(i1);
+						current.setFrequency(current.getFrequency()-1);
+						if(current.getFrequency() == 0){
+							current.setLoadingstation(false);
+							localBest.getStoppointsWithLoadingStations().remove(current.getId());
+							for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+								for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+									if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+											localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+										}
+									}
+								}
+							}
+							//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+						}
+					}
+
+					Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+					if (listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+						localBest = clone.deepClone(globalBest);
+						setRoundtripsAgain = true;
+					}
+					else{
+						for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+							if(x.isLoadingstation() == false){
+								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								x.setFrequency(1);
+								localBest.getStoppointsWithLoadingStations().add(x);
+								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+							}
+							else{
+								x.setFrequency(x.getFrequency()+1);
+							}
+						}
+						einsNeu.setCharge(listEins.getCharge());
+						einsNeu.setBuild(listEins.getBuild());
+						
+						// neue Umlaeufe speichern, falls besser
+						double newCostValue = einsNeu.getKostenMitLadestationen();
+						if(newCostValue < currentCostValue){
+							currentCostValue = newCostValue;
+							betterEins = einsNeu;
+						}
+						else{
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+					}
+				}
+			}
+			else{
+				Roundtrip einsNeu = new Roundtrip(eins.getId());
+				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getLast());
+				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getLast());
+				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, indexOfSfZwei));
+				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
+				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
+					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
+					zweiNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, eins.getIndexOfJourney(sfEins.get(sfEins.size()-2))));
+					deadruntimeId = eins.getAtIndex(eins.getIndexOfJourney(sfEins.get(sfEins.size()-2))).getToStopId() + eins.getDepot(); 
+					// neue Einrueckfahrt hinzufuegen
+					zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
+					if(zweiNeu.isFeasible()){
+						ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+						if (!eins.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(eins.getCharge());
+						}
+						if (!zwei.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(zwei.getCharge());
+						}
+						for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+							if (decreaseFrequencyAt.contains(null)) {
+								System.err.println("Attention!");
+							}
+							Stoppoint current = decreaseFrequencyAt.get(i1);
+							current.setFrequency(current.getFrequency()-1);
+							if(current.getFrequency() == 0){
+								current.setLoadingstation(false);
+								localBest.getStoppointsWithLoadingStations().remove(current.getId());
+								for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
+									for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+										if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+											if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+												localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
+											}
+										}
+									}
+								}
+								//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+							}
+						}
+
+						Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+						Roundtrip listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
+						if (listZwei == null || listEins == null) { // einer der Umlaeufe aufgrund der Kapazitaet nicht moeglich
+							localBest = clone.deepClone(globalBest);
+							setRoundtripsAgain = true;
+						}
+						else{
+							for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							einsNeu.setCharge(listEins.getCharge());
+							einsNeu.setBuild(listEins.getBuild());
+							
+							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
+								if(x.isLoadingstation() == false){
+									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									x.setFrequency(1);
+									localBest.getStoppointsWithLoadingStations().add(x);
+									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+								}
+								else{
+									x.setFrequency(x.getFrequency()+1);
+								}
+							}
+							zweiNeu.setCharge(listZwei.getCharge());
+							zweiNeu.setBuild(listZwei.getBuild());
+
+							// neue Umlaeufe speichern, falls besser
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							if(newCostValue < currentCostValue){
+								currentCostValue = newCostValue;
+								betterEins = einsNeu;
+								betterZwei = zweiNeu;
+							}
+							else{
+								localBest = clone.deepClone(globalBest);
+								setRoundtripsAgain = true;
+							}
+						}
+					}
+			}
 			}
 		}
 		// Kopie von oben für die Betrachtung aller Rueckwartskanten (j nach i)
@@ -815,11 +1554,11 @@ public class VNSwoShaking {
 						if(zweiNeu.isFeasible()){
 
 							ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
-							if (!eins.getLaden().contains(null)) {
-								decreaseFrequencyAt.addAll(eins.getLaden());
+							if (!eins.getCharge().contains(null)) {
+								decreaseFrequencyAt.addAll(eins.getCharge());
 							}
-							if (!zwei.getLaden().contains(null)) {
-								decreaseFrequencyAt.addAll(zwei.getLaden());
+							if (!zwei.getCharge().contains(null)) {
+								decreaseFrequencyAt.addAll(zwei.getCharge());
 							}
 							for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
 								if (decreaseFrequencyAt.contains(null)) {
@@ -831,10 +1570,10 @@ public class VNSwoShaking {
 									current.setLoadingstation(false);
 									localBest.getStoppointsWithLoadingStations().remove(current.getId());
 									for (int j1 = 0; j1 < localBest.getUmlaufplan().size(); j1++) {
-										for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getLaden().size(); j2++) {
-											if (localBest.getUmlaufplan().get(j1).getLaden().get(j2) != null){
-												if (localBest.getUmlaufplan().get(j1).getLaden().get(j2).getId().equals(current.getId())) {
-													localBest.getUmlaufplan().get(j1).getLaden().remove(j2);
+										for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j1).getCharge().size(); j2++) {
+											if (localBest.getUmlaufplan().get(j1).getCharge().get(j2) != null){
+												if (localBest.getUmlaufplan().get(j1).getCharge().get(j2).getId().equals(current.getId())) {
+													localBest.getUmlaufplan().get(j1).getCharge().remove(j2);
 												}
 											}
 										}
@@ -843,46 +1582,47 @@ public class VNSwoShaking {
 								}
 							}
 
-							ArrayList<ArrayList<Stoppoint>> listEins = FeasibilityHelper.newLoadingstations(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							Roundtrip listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
 							if (listEins == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(globalBest);
 								setRoundtripsAgain = true;
 								continue;
 							}
-							ArrayList<ArrayList<Stoppoint>> listZwei = FeasibilityHelper.newLoadingstations(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys);
+							Roundtrip listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
 							if (listZwei == null) { // Umlauf aufgrund der Kapazitaet nicht moeglich
 								localBest = clone.deepClone(globalBest);
 								setRoundtripsAgain = true;
 								continue;
 							}
-							for (int i1 = 0; i1 < listEins.get(1).size(); i1++) {
-								Stoppoint x = (Stoppoint) listEins.get(1).get(i1);
+							for (int i1 = 0; i1 < listEins.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 									x.setFrequency(1);
-									localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+									localBest.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 								}
 								else{
 									x.setFrequency(x.getFrequency()+1);
 								}
 							}
-							einsNeu.setStellen(listEins.get(1));
-							einsNeu.setLaden(listEins.get(1));
-							for (int i1 = 0; i1 < listZwei.get(1).size(); i1++) {
-								Stoppoint x = (Stoppoint) listZwei.get(1).get(i1);
+							einsNeu.setCharge(listEins.getCharge());
+							einsNeu.setBuild(listEins.getBuild());
+							
+							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
+								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
 									x.setFrequency(1);
-									localBest.getStoppointsWithLoadingStations().put(x.getId(), x);
+									localBest.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
 								}
 								else{
 									x.setFrequency(x.getFrequency()+1);
 								}
 							}
-							zweiNeu.setStellen(listZwei.get(1));
-							zweiNeu.setLaden(listZwei.get(1));
+							zweiNeu.setCharge(listZwei.getCharge());
+							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
 							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
@@ -901,6 +1641,21 @@ public class VNSwoShaking {
 			}
 		}
 		if(!eins.equals(betterEins) && betterEins != null){ // falls mindestens eine Verbesserung vorhanden ist, wird die Beste zurueckgegeben
+			Roundtrip newSmallerTrip = null;
+			double penaltyFactor = 0.0;
+			if(betterZwei != null){
+				if (betterEins.getJourneys().size() <= betterZwei.getJourneys().size()) {
+					newSmallerTrip = betterEins;
+				}
+				else{
+					newSmallerTrip = betterZwei;
+				}
+				if(newSmallerTrip.getJourneys().size() > smallerTrip.getJourneys().size()){
+					penaltyFactor = newSmallerTrip.getJourneys().size() - smallerTrip.getJourneys().size();
+				}
+			}
+			double penaltyCosts = (penaltyFactor*400000*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
+			//savings = initialCostValue - currentCostValue - penaltyCosts;
 			savings = initialCostValue - currentCostValue;
 			result.setSavings(savings);
 			result.setEins(betterEins);
@@ -934,56 +1689,5 @@ public class VNSwoShaking {
 			}
 		}
 		return minimal;
-	}
-
-	private String searchBestDepot(Roundtrip trip){
-		String startDepot = trip.getJourneys().getFirst().getFromStopId();
-		String endDepot = trip.getJourneys().getLast().getToStopId();
-		if(trip.getJourneys().size() <= 3){
-			double distanceDepotOne = trip.getJourneys().getFirst().getDistance();
-			double distanceDepotTwo = trip.getJourneys().getLast().getDistance();
-			if(distanceDepotOne <= distanceDepotTwo){
-				return startDepot;
-			}
-			else{
-				return endDepot;
-			}
-		}
-		String sfFirstFromStop = trip.getJourneys().get(1).getFromStopId();
-		String sfLastToStop = trip.getJourneys().get(trip.getJourneys().size()-2).getToStopId();
-		if(trip.getJourneys().get(1) instanceof Deadruntime){ // falls zu Beginn zwei LF sind
-			sfFirstFromStop = trip.getJourneys().get(2).getFromStopId();
-		}
-		if(trip.getJourneys().get(trip.getJourneys().size()-2) instanceof Deadruntime){ // falls am Ende zwei LF sind
-			sfFirstFromStop = trip.getJourneys().get(trip.getJourneys().size()-3).getToStopId();
-		}
-		// berechne die Gesamtdistanz von Ein- und Ausrueckfahrt zu beiden Depots
-		double distanceDepotOne = deadruntimes.get(startDepot + sfFirstFromStop).getDistance() + deadruntimes.get(sfLastToStop + startDepot).getDistance();
-		double distanceDepotTwo = deadruntimes.get(endDepot + sfFirstFromStop).getDistance() + deadruntimes.get(sfLastToStop + endDepot).getDistance();
-		if(distanceDepotOne <= distanceDepotTwo){
-			return startDepot;
-		}
-		else{
-			return endDepot;
-		}
-	}
-
-	private void assignBestDepot(Roundtrip trip, String bestDepot) {
-		String startDepot = trip.getJourneys().getFirst().getFromStopId();
-		String endDepot = trip.getJourneys().getLast().getToStopId();
-		if(bestDepot.equals(startDepot)){ // das erste Depot ist besser
-			trip.getJourneys().removeLast(); // letzte LF aendern
-			if(trip.getJourneys().getLast() instanceof Deadruntime){
-				trip.getJourneys().removeLast();
-			}
-			trip.getJourneys().addLast(deadruntimes.get(trip.getJourneys().getLast().getToStopId() + startDepot));
-		}
-		else{ // das zweite Depot ist besser
-			trip.getJourneys().removeFirst(); // erste LF aendern
-			if(trip.getJourneys().getFirst() instanceof Deadruntime){
-				trip.getJourneys().removeFirst();
-			}
-			trip.getJourneys().addFirst(deadruntimes.get(endDepot + trip.getJourneys().getFirst().getFromStopId()));
-		}
 	}
 }

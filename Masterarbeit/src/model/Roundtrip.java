@@ -16,15 +16,15 @@ public class Roundtrip {
 	private final int id;
 	private LinkedList<Journey> journeys;
 	private double operativeCosts;
-	private ArrayList<Stoppoint> laden; // Ladestationen, die der Umlauf nutzt
-	private ArrayList<Stoppoint> stellen; // An welcher Stelle im Umlauf wird die Ladestation genutzt (Stelle i bedeutet: zwischen Fahrt (i-1) und Fahrt i) 
+	private ArrayList<Stoppoint> build; // Ladestationen, die fuer den Umlauf gebaut wurden
+	private ArrayList<Stoppoint> charge; // an welche Ladestation wird im Umlauf geladen
 	private static final double CAPACITY = 80.0; // Batteriekapazitaet in kWh
 
 	public Roundtrip(int id){
 		this.id = id;
 		this.journeys = new LinkedList<Journey>();
-		this.laden = new ArrayList<Stoppoint>();
-		this.stellen = new ArrayList<Stoppoint>();
+		this.build = new ArrayList<Stoppoint>();
+		this.charge = new ArrayList<Stoppoint>();
 	}
 
 	public double getOperativeCosts() {
@@ -67,20 +67,20 @@ public class Roundtrip {
 		return result;
 	}
 
-	public ArrayList<Stoppoint> getLaden() {
-		return laden;
+	public ArrayList<Stoppoint> getBuild() {
+		return build;
 	}
 
-	public ArrayList<Stoppoint> getStellen() {
-		return stellen;
+	public ArrayList<Stoppoint> getCharge() {
+		return charge;
 	}
 
-	public void setStellen(ArrayList<Stoppoint> stellen){
-		this.stellen = stellen;
+	public void setCharge(ArrayList<Stoppoint> stellen){
+		this.charge = stellen;
 	}
 
-	public void setLaden(ArrayList<Stoppoint> laden){
-		this.laden = laden;
+	public void setBuild(ArrayList<Stoppoint> laden){
+		this.build = laden;
 	}
 
 	public static double getCapacity() {
@@ -99,8 +99,8 @@ public class Roundtrip {
 
 	public String getLadenString() {
 		String result = "[";
-		for (int i = 0; i < laden.size(); i++) {
-			result = result + laden.get(i).getId() + ", ";
+		for (int i = 0; i < charge.size(); i++) {
+			result = result + charge.get(i).getId() + ", ";
 		}
 		if(result.length() > 1){
 			result = result.substring(0, result.length()-2);
@@ -197,12 +197,12 @@ public class Roundtrip {
 		double verbrauchsKosten = 0.0;
 		double ladestationsAnteil = 0.0;
 
-		for (int i = 0; i < this.getLaden().size(); i++) {
+		for (int i = 0; i < this.getCharge().size(); i++) {
 
-			if(!this.getLaden().contains(null)){
-				int test = this.getLaden().get(i).getFrequency();
+			if(!this.getCharge().contains(null)){
+				int test = this.getCharge().get(i).getFrequency();
 				if(test == 0){
-					this.getLaden().remove(i);
+					this.getCharge().remove(i);
 					//System.err.println("Frequenz = 0 an Ladestation " + this.getLaden().get(i).getId());
 				}
 				double divisor = 1.0 / test;

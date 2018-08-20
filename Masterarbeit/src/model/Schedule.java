@@ -21,7 +21,7 @@ public class Schedule {
 	private final HashMap<String, Stoppoint> stoppoints;
 	private final HashMap<String, Servicejourney> servicejourneys;
 	private final int numberOfServiceJourneys; 
-	private HashMap<String, Stoppoint> stoppointsWithLoadingStations = new HashMap<String, Stoppoint>();
+	private ArrayList<Stoppoint> stoppointsWithLoadingStations = new ArrayList<Stoppoint>();
 	public static final double VEHICLE_COSTS = 400000; // fix costs for a vehicle in a planning period
 	public static final double LOADINGSTATION_COSTS = 250000; // fix costs for a loadingstation in a planning period
 	public static final double LOADING_COSTS = 0.1; // electricity price per kWh
@@ -33,10 +33,11 @@ public class Schedule {
 		this.numberOfServiceJourneys = servicejourneys.size();
 		this.depots = depots;
 		this.stoppoints = stoppoints;
+		/** die Depots sollen nicht mitgezaehlt werden
 		for (int i = 0; i < depots.size(); i++){
-			this.stoppointsWithLoadingStations.put(depots.get(i).getId(), stoppoints.get(depots.get(i).getId()));
+			this.stoppointsWithLoadingStations.add(stoppoints.get(depots.get(i).getId()));
 		}
-
+		*/
 	}
 
 	public ArrayList<Roundtrip> getUmlaufplan() {
@@ -192,11 +193,11 @@ public class Schedule {
 		return servicejourneys;
 	}
 
-	public HashMap<String, Stoppoint> getStoppointsWithLoadingStations() {
+	public ArrayList<Stoppoint> getStoppointsWithLoadingStations() {
 		return stoppointsWithLoadingStations;
 	}
 
-	public void setStoppointsWithLoadingStations(HashMap<String, Stoppoint> stoppointsWithLoadingStations) {
+	public void setStoppointsWithLoadingStations(ArrayList<Stoppoint> stoppointsWithLoadingStations) {
 		this.stoppointsWithLoadingStations = stoppointsWithLoadingStations;
 	}
 
@@ -210,9 +211,13 @@ public class Schedule {
 	
 	public void printLoadingstations(){
 		int counter = 0;
-		for(Entry<String, Stoppoint> e: stoppointsWithLoadingStations.entrySet()){
-			counter = counter + e.getValue().getFrequency();
-			System.out.println("Loadingstation " + e.getKey() + " has frequency: " + e.getValue().getFrequency());
+		for (int i = 0; i < stoppointsWithLoadingStations.size(); i++) {
+			counter = counter + stoppointsWithLoadingStations.get(i).getFrequency();
+			if(stoppointsWithLoadingStations.get(i).getFrequency() == 0){
+				stoppointsWithLoadingStations.remove(i);
+			}else{
+				System.out.println("Loadingstation " + stoppointsWithLoadingStations.get(i).getId() + " has frequency: " + stoppointsWithLoadingStations.get(i).getFrequency());
+			}
 		}
 		System.out.println("Gesamtanzahl Ladevorgaenge: " + counter);
 	}

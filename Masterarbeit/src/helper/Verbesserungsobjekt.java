@@ -1,6 +1,7 @@
 package helper;
 
 import model.Roundtrip;
+import model.Schedule;
 
 public class Verbesserungsobjekt {
 	
@@ -11,6 +12,7 @@ public class Verbesserungsobjekt {
 	//int indexAltZwei = 0;
 	Roundtrip altEins = null;
 	Roundtrip altZwei = null;
+	Schedule schedule = null;
 
 	public Verbesserungsobjekt(double savings, Roundtrip eins, Roundtrip zwei, Roundtrip altEins, Roundtrip altZwei) {
 		this.savings = savings;
@@ -76,6 +78,16 @@ public class Verbesserungsobjekt {
 
 	public void setAltZwei(Roundtrip altZwei) {
 		this.altZwei = altZwei;
+	}
+
+	public void setSchedule(Schedule schedule) {
+		this.schedule = schedule;
+		
+	}
+
+	public Schedule getSchedule() {
+		// TODO Auto-generated method stub
+		return this.schedule;
 	}
 
 

@@ -4,12 +4,15 @@
 package helper;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Vector;
 
 import model.Deadruntime;
+import model.Depot;
 import model.Journey;
 import model.Roundtrip;
 import model.Servicejourney;
@@ -110,7 +113,472 @@ public class FeasibilityHelper {
 		}
 		return result;
 	}
+	
+	/**
+	 * 
+	 * @param s Servicefahrt, zu der das naechstgelegene Depot gesucht wird
+	 * @return das naechstgelegene Depot zur Servicefahrt s
+	 */
+	public static Depot findNearestDepot(Servicejourney s, HashMap<String, Deadruntime> deadruntimes, List<Depot> depots){
+		Depot currentDepot = depots.get(0);  // das erste Depot in der Liste wird initial ausgewaehlt
+		double distanceBest = deadruntimes.get("" + currentDepot.getId() + s.getFromStopId()).getDistance() + deadruntimes.get("" + s.getToStopId() + currentDepot.getId()).getDistance();
+		double distanceTemp = 0;
+		// ueberpruefe, ob ein anderes Depot einen kuerzeren Weg zu firstSf hat
+		for (int j = 1; j < depots.size(); j++) {
+			distanceTemp = deadruntimes.get("" + depots.get(j).getId() + s.getFromStopId()).getDistance() + deadruntimes.get("" + s.getToStopId() + depots.get(j).getId()).getDistance();
+			if(distanceTemp < distanceBest){
+				currentDepot = depots.get(j);
+			}
+		}
+		return currentDepot;
+	}
+	
+	public static String searchBestDepot(Roundtrip trip, HashMap<String, Deadruntime> deadruntimes){
+		String startDepot = trip.getJourneys().getFirst().getFromStopId();
+		String endDepot = trip.getJourneys().getLast().getToStopId();
+		if(trip.getJourneys().size() <= 3){
+			double distanceDepotOne = trip.getJourneys().getFirst().getDistance();
+			double distanceDepotTwo = trip.getJourneys().getLast().getDistance();
+			if(distanceDepotOne <= distanceDepotTwo){
+				return startDepot;
+			}
+			else{
+				return endDepot;
+			}
+		}
+		String sfFirstFromStop = trip.getJourneys().get(1).getFromStopId();
+		String sfLastToStop = trip.getJourneys().get(trip.getJourneys().size()-2).getToStopId();
+		if(trip.getJourneys().get(1) instanceof Deadruntime){ // falls zu Beginn zwei LF sind
+			sfFirstFromStop = trip.getJourneys().get(2).getFromStopId();
+		}
+		if(trip.getJourneys().get(trip.getJourneys().size()-2) instanceof Deadruntime){ // falls am Ende zwei LF sind
+			sfFirstFromStop = trip.getJourneys().get(trip.getJourneys().size()-3).getToStopId();
+		}
+		// berechne die Gesamtdistanz von Ein- und Ausrueckfahrt zu beiden Depots
+		double distanceDepotOne = deadruntimes.get(startDepot + sfFirstFromStop).getDistance() + deadruntimes.get(sfLastToStop + startDepot).getDistance();
+		double distanceDepotTwo = deadruntimes.get(endDepot + sfFirstFromStop).getDistance() + deadruntimes.get(sfLastToStop + endDepot).getDistance();
+		if(distanceDepotOne <= distanceDepotTwo){
+			return startDepot;
+		}
+		else{
+			return endDepot;
+		}
+	}
+	
+	public static void assignBestDepot(Roundtrip trip, String bestDepot, HashMap<String, Deadruntime> deadruntimes) {
+		String startDepot = trip.getJourneys().getFirst().getFromStopId();
+		String endDepot = trip.getJourneys().getLast().getToStopId();
+		if(bestDepot.equals(startDepot)){ // das erste Depot ist besser
+			trip.getJourneys().removeLast(); // letzte LF aendern
+			if(trip.getJourneys().getLast() instanceof Deadruntime){
+				trip.getJourneys().removeLast();
+			}
+			trip.getJourneys().addLast(deadruntimes.get(trip.getJourneys().getLast().getToStopId() + startDepot));
+		}
+		else{ // das zweite Depot ist besser
+			trip.getJourneys().removeFirst(); // erste LF aendern
+			if(trip.getJourneys().getFirst() instanceof Deadruntime){
+				trip.getJourneys().removeFirst();
+			}
+			trip.getJourneys().addFirst(deadruntimes.get(endDepot + trip.getJourneys().getFirst().getFromStopId()));
+		}
+	}
+	
+	public static Roundtrip roundtripWithCharging(LinkedList<Journey> neu, HashMap<String, Stoppoint> stoppoints, HashMap<String, Deadruntime> deadruntimes, HashMap<String, Servicejourney> servicejourneys, int id){
 
+		Roundtrip result = new Roundtrip(id);
+		for (int i = 0; i < neu.size(); i++) {
+			if (neu.get(i) instanceof Servicejourney) {
+				result.getJourneys().add(neu.get(i)); // alles SF in den neuen Umlauf einbauen
+			}
+		}
+		for (int i = 1; i < result.getJourneys().size(); i++) {
+			Servicejourney current = (Servicejourney)result.getJourneys().get(i);
+			Servicejourney prev = (Servicejourney)result.getJourneys().get(i-1);
+			if (current.getSfDepTime().getTime() < prev.getSfArrTime().getTime()) {
+				return null;
+			}
+		}
+		result.addFahrtAfterFahrt(0, deadruntimes.get(neu.getFirst().getFromStopId() + result.getJourneys().getFirst().getFromStopId())); // Ausrueckfahrt einfuegen
+		for (int i = 1; i < result.getJourneys().size()-1; i = i + 2) {
+			if(result.getAtIndex(i) instanceof Deadruntime){
+				break;
+			}
+			result.addFahrtAfterFahrt(i+1, deadruntimes.get(result.getJourneys().get(i).getToStopId() + result.getJourneys().get(i+1).getFromStopId())); // alle inneren LF einfuegen
+		}
+		result.getJourneys().add(deadruntimes.get(result.getJourneys().getLast().getToStopId() + neu.getLast().getToStopId())); // Einrueckfahrt einfuegen
+	
+		String startDepot = result.getJourneys().getFirst().getFromStopId();
+		String EndDepot = result.getJourneys().getLast().getToStopId();
+		if (!startDepot.equals(EndDepot)){ // der Umlauf hat unterschiedliche Depots
+			assignBestDepot(result, searchBestDepot(result, deadruntimes), deadruntimes);
+		}
+
+		double capacity = Roundtrip.getCapacity(); // Batteriekapazitaet in kWh 
+		ArrayList<Stoppoint> newStations = new ArrayList<Stoppoint>(); // Liste von Haltestellen, die neu gebaut werden
+		ArrayList<Stoppoint> existingStations = new ArrayList<Stoppoint>(); // Liste der Haltestellen, an denen in dem Umlauf geldaen wird
+		int detourCount = 0; // Variable für zusaetzliche LF im Umlauf aufgrund von Umwegen
+
+		Servicejourney currentSf = null;
+		Stoppoint fromStop = null;
+		Servicejourney previousSf = null;
+
+		Deadruntime currentDr = null;
+		Servicejourney beforeDr = null;
+		Servicejourney afterDr = null;
+
+		Stoppoint currentStoppoint = null;
+
+		for (int i = 0; i < result.getJourneys().size(); i++) { // fuer jede Fahrt i im zusammengesetzten Fahrzeugumlauf
+
+			if(result.getJourneys().get(i) instanceof Deadruntime){
+
+				currentDr = (Deadruntime) result.getJourneys().get(i);
+
+				if(i == 0){ // erste Fahrt im Umlauf
+					if(capacity < currentDr.getEnergyConsumption()){
+						return null;
+					}
+				}
+				/**
+				else if(i == 1){ // wegen Umweg zwei LF zu Beginn des Umlaufs
+					capacity = Roundtrip.getCapacity() - neu.get(i).getEnergyConsumption();
+					continue;
+				}
+				*/
+				else if(i == result.getJourneys().size()-1){ // letzte Fahrt im Umlauf
+					if(capacity < currentDr.getEnergyConsumption()){
+						currentStoppoint = stoppoints.get(result.getJourneys().get(i-1).getToStopId());
+						if(currentStoppoint.isLoadingstation()){
+							existingStations.add(currentStoppoint);
+							break;
+						}
+						else if(!(result.getJourneys().get(i-1) instanceof Deadruntime)){
+							// prüfen ob eine Ladestation auf einem Umweg vorhanden ist
+							Deadruntime bestDetourOne = null;
+							Deadruntime bestDetourTwo = null;
+							Deadruntime currentDetourOne = null;
+							Deadruntime currentDetourTwo = null;
+							Double costOfDetour = 100000000.0;	
+							Double minimalCosts = 100000000.0;
+							Stoppoint load = null;
+							for(Entry <String, Stoppoint> e: stoppoints.entrySet()){
+								if(!(e.getKey().equals(result.getJourneys().get(i-1).getToStopId()) || e.getKey().equals(result.getJourneys().get(i).getToStopId()))){
+									if(e.getValue().isLoadingstation()){ // suche eine Haltestelle an der schon eine Ladestation ist
+										currentDetourOne = deadruntimes.get("" + result.getJourneys().get(i-1).getToStopId() + e.getValue().getId());
+										currentDetourTwo = deadruntimes.get("" + e.getValue().getId() + result.getJourneys().get(i).getToStopId());
+										// Ueberpruefe ob der Umweg von der Kapazitaet her zulaessig ist
+										if(capacity >= currentDetourOne.getEnergyConsumption()){
+											costOfDetour = currentDetourTwo.getDistance(); // Distanz die nach dem Laden im Umweg noch zurueckgelegt werden muss
+											if(costOfDetour < minimalCosts){ // ist der Umweg kuerzer als bisher gefundene Umwege?									minimalCosts = costOfDetour; 
+												minimalCosts = costOfDetour; 
+												bestDetourOne = currentDetourOne;
+												bestDetourTwo = currentDetourTwo;
+												load = e.getValue(); // speicher die Haltestelle an der mit Umweg geladen werden kann
+											}
+										}
+									}
+								}
+							}
+							if(load != null){ // es wurde ein zulaessiger Umweg gefunden
+								// ist die Kapazitaet beim Fahren des Umwegs aufgrund des Ladens groesser als die Kapazitaet beim Fahren des regulaeren Wegs ohne Laden?
+								if((capacity - result.getJourneys().get(i).getEnergyConsumption()) < (capacity - bestDetourTwo.getEnergyConsumption())){ 
+									// der Umweg lohnt sich
+									result.getJourneys().remove(i); // entferne die direkte LF 
+									result.getJourneys().add(i, bestDetourTwo);
+									result.getJourneys().add(i, bestDetourOne);
+									existingStations.add(load);
+									capacity = Roundtrip.getCapacity() - result.getJourneys().get(i).getEnergyConsumption();
+									detourCount++; // der Umlauf hat jetzt eine LF mehr als vorher
+									continue;
+								}
+							}
+							else{ // baue Ladestation 
+								newStations.add(currentStoppoint);
+								existingStations.add(currentStoppoint);
+								continue;
+							}
+						}
+					}
+				}
+				/**
+				else if(i == neu.size()-2){ // vorletzte Fahrt im Umlauf ist wegen eines Umwegs auch eine LF
+					currentStoppoint = stoppoints.get(neu.get(i-1).getToStopId());
+					if(currentStoppoint.isLoadingstation()){
+						//listOfStations.add(currentStoppoint);
+						//indexOfLoad.add(i);
+						existingStations.add(currentStoppoint);
+						break;
+					}
+					else{ // baue Ladestation 
+						newStations.add(currentStoppoint);
+						//indexOfLoad.add(i);
+						existingStations.add(currentStoppoint);
+						continue;
+					}
+				} 
+				*/
+				else{ // alle anderen LF 
+					if(detourCount == 0){
+						beforeDr = (Servicejourney) result.getJourneys().get(i-1);
+						afterDr = (Servicejourney) result.getJourneys().get(i+1);
+					}
+					else{
+						if(result.getJourneys().get(i-1) instanceof Deadruntime){
+							beforeDr = (Servicejourney) result.getJourneys().get(i-2);
+							afterDr = (Servicejourney) result.getJourneys().get(i+1);
+						}
+						else if(result.getJourneys().get(i+1) instanceof Deadruntime){
+							beforeDr = (Servicejourney) result.getJourneys().get(i-1);
+							afterDr = (Servicejourney) result.getJourneys().get(i+2);
+						}
+						else{
+							beforeDr = (Servicejourney) result.getJourneys().get(i-1);
+							afterDr = (Servicejourney) result.getJourneys().get(i+1);
+						}
+					}
+					if(FeasibilityHelper.zeitpufferFuerLadezeit(beforeDr.getId(), afterDr.getId(), deadruntimes, servicejourneys, capacity)){
+						// ist an der Endhaltestelle der vorherigen SF eine Ladestation?
+						currentStoppoint = stoppoints.get(beforeDr.getToStopId());
+						if(currentStoppoint.isLoadingstation()){
+							existingStations.add(currentStoppoint);
+							capacity = Roundtrip.getCapacity() - currentDr.getEnergyConsumption();
+							continue;
+						}
+						if((result.getJourneys().get(i-1) instanceof Servicejourney) && (result.getJourneys().get(i+1) instanceof Servicejourney)){
+							// prüfen ob eine Ladestation auf einem Umweg vorhanden ist
+							Deadruntime bestDetourOne = null;
+							Deadruntime bestDetourTwo = null;
+							Deadruntime currentDetourOne = null;
+							Deadruntime currentDetourTwo = null;
+							Double costOfDetour = 100000000.0;	
+							Double minimalCosts = 100000000.0;
+							Stoppoint load = null;
+							for(Entry <String, Stoppoint> e: stoppoints.entrySet()){
+								if(!(e.getKey().equals(beforeDr.getToStopId()) || e.getKey().equals(afterDr.getFromStopId()))){
+									if(e.getValue().isLoadingstation()){ // suche eine Haltestelle an der schon eine Ladestation ist
+										currentDetourOne = deadruntimes.get("" + beforeDr.getToStopId() + e.getValue().getId());
+										currentDetourTwo = deadruntimes.get("" + e.getValue().getId() + afterDr.getFromStopId());
+										// Ueberpruefe ob der Umweg von der Kapazitaet her zulaessig ist
+										if(capacity >= currentDetourOne.getEnergyConsumption()){
+											// ueberpruefen ob Umweg zeitlich zulässig ist
+											if(FeasibilityHelper.zeitpufferFuerUmweg(currentDetourOne, currentDetourTwo, beforeDr, afterDr, capacity)){
+												costOfDetour = currentDetourTwo.getDistance(); // Distanz die nach dem Laden im Umweg noch zurueckgelegt werden muss
+												if(costOfDetour < minimalCosts){ // ist der Umweg kuerzer als bisher gefundene Umwege?									minimalCosts = costOfDetour; 
+													minimalCosts = costOfDetour; 
+													bestDetourOne = currentDetourOne;
+													bestDetourTwo = currentDetourTwo;
+													load = e.getValue(); // speicher die Haltestelle an der mit Umweg geladen werden kann
+												}
+											}
+										}
+									}
+								}
+							}
+							if(load != null){ // es wurde ein zulaessiger Umweg gefunden
+								// ist die Kapazitaet beim Fahren des Umwegs aufgrund des Ladens groesser als die Kapazitaet beim Fahren des regulaeren Wegs ohne Laden?
+								if((capacity - currentDr.getEnergyConsumption()) < (capacity - bestDetourTwo.getEnergyConsumption())){ 
+									// der Umweg lohnt sich
+									result.getJourneys().remove(i); // entferne die direkte LF 
+									result.getJourneys().add(i, bestDetourTwo);
+									result.getJourneys().add(i, bestDetourOne);
+									existingStations.add(load);
+									capacity = Roundtrip.getCapacity() - currentDr.getEnergyConsumption();
+									detourCount++; // der Umlauf hat jetzt eine LF mehr als vorher
+									continue;
+								}
+							}
+						}
+						else{ // baue Ladestation 
+							newStations.add(currentStoppoint);
+							existingStations.add(currentStoppoint);
+							break;
+						}
+					}
+
+				}
+			}
+
+			if(result.getJourneys().get(i) instanceof Servicejourney){ // falls i eine SF ist
+				
+				currentSf = (Servicejourney) result.getJourneys().get(i);
+				fromStop = stoppoints.get(currentSf.getFromStopId());
+
+				if(i == 1){ // i ist 1. SF
+					// falls schon Ladestation an Starthaltestelle vorhanden
+					if(fromStop.isLoadingstation()){
+						existingStations.add(fromStop);
+						capacity = Roundtrip.getCapacity() - currentSf.getEnergyConsumption();
+						continue;
+					}
+					// prüfen ob eine Ladestation auf einem Umweg vorhanden ist
+					Deadruntime bestDetourOne = null;
+					Deadruntime bestDetourTwo = null;
+					Deadruntime currentDetourOne = null;
+					Deadruntime currentDetourTwo = null;
+					Double costOfDetour = 100000000.0;	
+					Double minimalCosts = 100000000.0;
+					Stoppoint load = null;
+					for(Entry <String, Stoppoint> e: stoppoints.entrySet()){
+						if(!(e.getKey().equals(result.getJourneys().get(0).getFromStopId()) || e.getKey().equals(result.getJourneys().get(0).getToStopId()))){
+							if(e.getValue().isLoadingstation()){ // suche eine Haltestelle an der schon eine Ladestation ist
+								currentDetourOne = deadruntimes.get("" + result.getJourneys().get(0).getFromStopId() + e.getValue().getId());
+								currentDetourTwo = deadruntimes.get("" + e.getValue().getId() + result.getJourneys().get(0).getToStopId());
+								// Ueberpruefe ob der Umweg von der Kapazitaet her zulaessig ist
+								if(capacity >= currentDetourOne.getEnergyConsumption()){
+									costOfDetour = currentDetourTwo.getDistance(); // Distanz die nach dem Laden im Umweg noch zurueckgelegt werden muss
+									if(costOfDetour < minimalCosts){ // ist der Umweg kuerzer als bisher gefundene Umwege?								
+										minimalCosts = costOfDetour; 
+										bestDetourOne = currentDetourOne;
+										bestDetourTwo = currentDetourTwo;
+										load = e.getValue(); // speicher die Haltestelle an der mit Umweg geladen werden kann
+									}
+								}
+							}
+						}
+					}
+					if(load != null){ // es wurde ein zulaessiger Umweg gefunden
+						// ist die Kapazitaet beim Fahren des Umwegs aufgrund des Ladens groesser als die Kapazitaet beim Fahren des regulaeren Wegs ohne Laden?
+						if((capacity - result.getJourneys().get(i-1).getEnergyConsumption()) < (capacity - bestDetourTwo.getEnergyConsumption())){ 
+							// der Umweg lohnt sich
+							result.getJourneys().remove(i-1); // entferne die direkte LF 
+							result.getJourneys().add(i-1, bestDetourTwo);
+							result.getJourneys().add(i-1, bestDetourOne);
+							existingStations.add(load);
+							capacity = Roundtrip.getCapacity() - bestDetourTwo.getEnergyConsumption();
+							detourCount ++; // der Umlauf hat jetzt eine LF mehr als vorher
+							continue;
+						}
+					}
+					// es konnte nicht geladen werden
+					if(capacity >= currentSf.getEnergyConsumption()){ 
+						// die SF kann auch ohne Laden gefahren werden
+						capacity = capacity - currentSf.getEnergyConsumption();
+						continue;
+					}
+					else{ // baue Ladestation an Starthaltestelle von i
+						newStations.add(fromStop);
+						existingStations.add(fromStop);
+						capacity = Roundtrip.getCapacity() - currentSf.getEnergyConsumption();
+						continue;
+					}
+				}
+
+				else{ // ab der 2. SF
+					if(i == 2){ // i ist die erste SF aber es gibt einen Umweg davor
+						// falls schon Ladestation an Starthaltestelle vorhanden
+						if(fromStop.isLoadingstation()){
+							existingStations.add(fromStop);
+							capacity = Roundtrip.getCapacity() - currentSf.getEnergyConsumption();
+							continue;
+						}
+						// es konnte nicht geladen werden
+						if(capacity >= currentSf.getEnergyConsumption()){ 
+							// die SF kann auch ohne Laden gefahren werden
+							capacity = capacity - currentSf.getEnergyConsumption();
+							continue;
+						}
+						else{ // baue Ladestation an Starthaltestelle von i
+							newStations.add(fromStop);
+							existingStations.add(fromStop);
+							capacity = Roundtrip.getCapacity() - currentSf.getEnergyConsumption();
+							continue;
+						}
+					}
+					if(detourCount == 0){
+						previousSf = (Servicejourney) result.getJourneys().get(i-2);
+					}
+					else{
+						if(result.getJourneys().get(i-2) instanceof Servicejourney){
+							previousSf = (Servicejourney) result.getJourneys().get(i-2);
+						}
+						else{
+							previousSf = (Servicejourney) result.getJourneys().get(i-3);
+						}
+					}
+					// Fall 1: ist es zeitlich moeglich vor der SF zu laden?
+					if(FeasibilityHelper.zeitpufferFuerLadezeit(previousSf.getId(), currentSf.getId(), deadruntimes, servicejourneys, capacity)){
+						// ist an der Starthaltestelle der SF eine Ladestation?
+						if(fromStop.isLoadingstation()){
+							existingStations.add(fromStop);
+							capacity = Roundtrip.getCapacity() - currentSf.getEnergyConsumption();
+							continue;
+						}
+						// prüfen ob eine Ladestation auf einem Umweg vorhanden ist
+						Deadruntime bestDetourOne = null;
+						Deadruntime bestDetourTwo = null;
+						Deadruntime currentDetourOne = null;
+						Deadruntime currentDetourTwo = null;
+						Double costOfDetour = 100000000.0;	
+						Double minimalCosts = 100000000.0;
+						Stoppoint load = null;
+						if(result.getJourneys().get(i-2) instanceof Servicejourney){ // wenn vor der SF noch kein Umweg ist
+							for(Entry <String, Stoppoint> e: stoppoints.entrySet()){
+								if(!(e.getKey().equals(previousSf.getToStopId()) || e.getKey().equals(currentSf.getFromStopId()))){
+									if(e.getValue().isLoadingstation()){ // suche eine Haltestelle an der schon eine Ladestation ist
+										currentDetourOne = deadruntimes.get("" + previousSf.getToStopId() + e.getValue().getId());
+										currentDetourTwo = deadruntimes.get("" + e.getValue().getId() + currentSf.getFromStopId());
+										// Ueberpruefe ob der Umweg von der Kapazitaet her zulaessig ist
+										if(capacity >= currentDetourOne.getEnergyConsumption()){
+											// Ueberpruefe ob der Umweg zeitlich zulässig ist
+											if(FeasibilityHelper.zeitpufferFuerUmweg(currentDetourOne, currentDetourTwo, previousSf, currentSf, capacity)){
+												costOfDetour = currentDetourTwo.getDistance(); // Distanz die nach dem Laden im Umweg noch zurueckgelegt werden muss
+												if(costOfDetour < minimalCosts){ // ist der Umweg kuerzer als bisher gefundene Umwege?
+													minimalCosts = costOfDetour; 
+													bestDetourOne = currentDetourOne;
+													bestDetourTwo = currentDetourTwo;
+													load = e.getValue(); // speicher die Haltestelle an der mit Umweg geladen werden kann
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						if(load != null){ // es wurde ein zulaessiger Umweg gefunden
+							// ist die Kapazitaet beim Fahren des Umwegs aufgrund des Ladens groesser als die Kapazitaet beim Fahren des regulaeren Wegs ohne Laden?
+							if((capacity - result.getJourneys().get(i-1).getEnergyConsumption()) < (capacity - bestDetourTwo.getEnergyConsumption())){
+								result.getJourneys().remove(i-1); // entferne die direkte LF 
+								result.getJourneys().add(i-1, bestDetourTwo);
+								result.getJourneys().add(i-1, bestDetourOne);
+								existingStations.add(load);
+								detourCount ++; // der Umlauf hat jetzt eine LF mehr als vorher
+								capacity = Roundtrip.getCapacity() - bestDetourTwo.getEnergyConsumption() - currentSf.getEnergyConsumption();
+								continue;
+							}
+						}
+					}
+
+					// Fall 2: Es konnte nicht geladen werden; 
+					// kann die SF auch ohne Laden gefahren werden?
+					if(capacity >= currentSf.getEnergyConsumption()){ 
+						capacity = capacity - currentSf.getEnergyConsumption();
+						continue;
+					}
+
+					// Fall 3: Es konnte nicht geladen werden und die SF konnte nicht ohne Laden gefahren werden;
+					// kann eine Ladestation an der Starthaltestelle der SF gebaut werden?
+					if(FeasibilityHelper.zeitpufferFuerLadezeit(previousSf.getId(), currentSf.getId(), deadruntimes, servicejourneys, capacity)){
+						newStations.add(fromStop);
+						existingStations.add(fromStop);
+						capacity = Roundtrip.getCapacity() - currentSf.getEnergyConsumption();
+						continue;
+					}
+					else{
+						return null; // Umlauf nicht moeglich
+					}
+				}
+			}	
+			capacity = capacity - result.getJourneys().get(i).getEnergyConsumption();
+			if(capacity < 0){
+				return null;
+			}
+		}
+		result.setBuild(newStations);
+		result.setCharge(existingStations);
+		return result;
+	}
+	
 	public static ArrayList<ArrayList<Stoppoint>> howIsRoundtourFeasible(LinkedList<Journey> neu, HashMap<String, Stoppoint> stoppoints, HashMap<String, Deadruntime> deadruntimes, HashMap<String, Servicejourney> servicejourneys){
 		ArrayList<ArrayList<Stoppoint>> result = new ArrayList<ArrayList<Stoppoint>>();
 		double kapazitaet = Roundtrip.getCapacity(); // Batteriekapazitaet in kWh 

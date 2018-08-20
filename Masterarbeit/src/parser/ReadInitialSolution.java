@@ -212,8 +212,8 @@ public class ReadInitialSolution {
     							laden.add((stoppoints.get(idStoppoints[i])));
     						}
 						}
-                        neu.setLaden(laden);
-                        neu.setStellen(laden);
+                        neu.setBuild(laden);
+                        neu.setCharge(laden);
                         
                         roundtrips.add(neu);
                         
@@ -289,11 +289,11 @@ public class ReadInitialSolution {
 	public void setInitialSolutionVariables(){
 		initialSolution = new Schedule(roundtrips, servicejourneys, depots, stoppoints);
 		int counter = 0;
-		HashMap<String, Stoppoint> list = new HashMap<String, Stoppoint>();
+		ArrayList<Stoppoint> list = new ArrayList<Stoppoint>();
 		for (Entry<String, Stoppoint> e: stoppoints.entrySet()) {
 			if (e.getValue().isLoadingstation()) {
 				counter ++;
-				list.put(e.getKey(), e.getValue());
+				list.add(e.getValue());
 			}
 		}
 		initialSolution.setNumberOfLoadingStations(counter);

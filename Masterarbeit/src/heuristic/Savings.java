@@ -48,11 +48,13 @@ public class Savings {
 	public void startSavings(){
 		createPendeltours();
 		double valueSaving = 0.0;
-		//HashMap <String, Double> savingsMatrix = initialSavingsMatrix();
 		HashMap <String, Double> savingsMatrix = new HashMap<String, Double>();
 		int iteration = 0;
 		
 		do {
+			if(iteration == 393){
+				System.out.println();
+			}
 			savingsMatrix = neuerUmlaufplan(savingsMatrix);
 			valueSaving = 0.0;
 			for (Entry<String, Double> e: savingsMatrix.entrySet()){ 
@@ -68,7 +70,64 @@ public class Savings {
 			}
 			printInitialSolution();
 			// Terminierungskriterium: Die Savings-Matrix ist leer oder es sind keine positiven Savings mehr vorhanden
-		}while(!savingsMatrix.isEmpty() && !(valueSaving <= 0)) ;
+		}while(!savingsMatrix.isEmpty() && !(valueSaving <= 0));
+		/**for (int i = 0; i < umlaufplan.getUmlaufplan().size(); i++) {
+
+			if(i == 34){
+				System.out.println();
+			}
+			ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+			if (!umlaufplan.getUmlaufplan().get(i).getCharge().contains(null)) {
+				decreaseFrequencyAt.addAll(umlaufplan.getUmlaufplan().get(i).getCharge());
+			}
+			Roundtrip x = FeasibilityHelper.roundtripWithCharging(umlaufplan.getUmlaufplan().get(i).getJourneys(), stoppoints, deadruntimes, servicejourneys, umlaufplan.getUmlaufplan().get(i).getId());
+			if(umlaufplan.getUmlaufplan().get(i) == null){
+				System.out.println();
+			}
+			if(x == null){
+				System.out.println();
+			}
+			umlaufplan.getUmlaufplan().set(i, x);
+
+			for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+				if (decreaseFrequencyAt.contains(null)) {
+					System.err.println("Attention!");
+				}
+				Stoppoint current = decreaseFrequencyAt.get(i1);
+				current.setFrequency(current.getFrequency()-1);
+				if(current.getFrequency() == 0){
+					current.setLoadingstation(false);
+					for (int i11 = 0; i11 < umlaufplan.getStoppointsWithLoadingStations().size(); i11++) {
+						if (umlaufplan.getStoppointsWithLoadingStations().get(i11).getId().equals(current.getId())) {
+							umlaufplan.getStoppointsWithLoadingStations().remove(i11);
+						}
+					}
+					for (int j = 0; j < umlaufplan.getUmlaufplan().size(); j++) {
+						for (int j2 = 0; j2 < umlaufplan.getUmlaufplan().get(j).getCharge().size(); j2++) {
+							if (umlaufplan.getUmlaufplan().get(j).getCharge().get(j2) != null){
+								if (umlaufplan.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+									umlaufplan.getUmlaufplan().get(j).getCharge().remove(j2);
+								}
+							}
+						}
+					}
+					//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+				}
+			}
+			for (int i1 = 0; i1 < x.getCharge().size(); i1++) {
+				Stoppoint x1 = (Stoppoint) x.getCharge().get(i1);
+				if(x1.isLoadingstation() == false){
+					x1.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+					x1.setFrequency(1);
+					umlaufplan.getStoppointsWithLoadingStations().add(x1);
+					System.out.println("An Haltestelle " + x1.getId() + " wurde ein Ladestation gebaut.");
+				}
+				else{
+					x1.setFrequency(x1.getFrequency()+1);
+				}
+			}
+
+		}*/
 		umlaufplan.setNumberOfLoadingStations(umlaufplan.getStoppointsWithLoadingStations().size());
 		umlaufplan.calculateCosts();
 		umlaufplan.printUmlaufplan();
@@ -120,7 +179,7 @@ public class Savings {
 			Roundtrip pendelTour = new Roundtrip(counter); //erstelle einen neuen Fahrzeugumlauf mit dieser Servicefahrt
 
 			Servicejourney firstSf = servicejourneys.get(i.getKey()); 
-			Depot depot = findNearestDepot(firstSf);
+			Depot depot = FeasibilityHelper.findNearestDepot(firstSf, deadruntimes, depots);
 
 			String key = depot.getId() + firstSf.getFromStopId(); // key ist die ID des Depots + die ID der Starthaltestelle von Servicefahrt i 
 
@@ -154,25 +213,6 @@ public class Savings {
 			counter ++;
 		}
 		return roundtrips; // Gesamtliste von Fahrzeugumlaeufen zurueckgeben
-	}
-
-	/**
-	 * 
-	 * @param s Servicefahrt, zu der das naechstgelegene Depot gesucht wird
-	 * @return das naechstgelegene Depot zur Servicefahrt s
-	 */
-	private Depot findNearestDepot(Servicejourney s){
-		Depot currentDepot = depots.get(0);  // das erste Depot in der Liste wird initial ausgewaehlt
-		double distanceBest = deadruntimes.get("" + currentDepot.getId() + s.getFromStopId()).getDistance() + deadruntimes.get("" + s.getToStopId() + currentDepot.getId()).getDistance();
-		double distanceTemp = 0;
-		// ueberpruefe, ob ein anderes Depot einen kuerzeren Weg zu firstSf hat
-		for (int j = 1; j < depots.size(); j++) {
-			distanceTemp = deadruntimes.get("" + depots.get(j).getId() + s.getFromStopId()).getDistance() + deadruntimes.get("" + s.getToStopId() + depots.get(j).getId()).getDistance();
-			if(distanceTemp < distanceBest){
-				currentDepot = depots.get(j);
-			}
-		}
-		return currentDepot;
 	}
 
 	public ArrayList<Roundtrip> getRoundtrips() {
@@ -241,87 +281,120 @@ public class Savings {
 		String currentKey = null; // Schluessel des aktuell behandelten Savings
 		List<String> keys = new ArrayList<String>(); // Schluessel aller savings, die schon betrachtet wurden
 		LinkedList<Journey> currentNew = null; //  Container fuer den neu zusammengelegten Umlauf
-		//HashMap <String, ArrayList<Stoppoint>> numberOfnewLoadingstations = null; // Container fuer die Haltestellen, an denen Ladestationen gebaut werden muessen, um die Savings realisiern zu koennen
-		ArrayList<ArrayList<Stoppoint>> list = new ArrayList<ArrayList<Stoppoint>>();
-		if(currenntSavingsMatrix.isEmpty()){ 
-			return currenntSavingsMatrix; // in diesem Fall (es gibt keine Savings) werden die Pendeltouren zurueckgegeben
-		}
+		ArrayList<Integer> umlaeufe = null; 
+		Roundtrip chargingList = null;
+		//ArrayList<ArrayList<Stoppoint>> chargingList = new ArrayList<ArrayList<Stoppoint>>();
 		do {
+			if(currenntSavingsMatrix.isEmpty()){ 
+				return currenntSavingsMatrix; // in diesem Fall (es gibt keine Savings) werden die Pendeltouren zurueckgegeben
+			}
 			currentKey = getHighestSaving(currenntSavingsMatrix); 
+			if (currentKey.equals("0078644100786440")) {
+				System.out.println();
+			}
 			if(currenntSavingsMatrix.get(currentKey) <= 0.0){ // falls der groesste Saving ≤ 0
 				return currenntSavingsMatrix; // hoert auf & aktuelle Fahrzeugumlaeufe zurueckgeben
 			}
 			if(!keys.contains(currentKey)){ // falls diese Savings noch nicht betrachtet worden sind
 				do{
 					currentNew = umlaeufeZusammenlegen(currentKey); // lege die beiden Umlaeufe mit den groessten Savings zusammen
+					umlaeufe = umlaeufeFinden(currentKey);
 					if(currentNew == null){
 						currenntSavingsMatrix.remove(currentKey);
+						currentKey = getHighestSaving(currenntSavingsMatrix); 
 					}
 				} while (currentNew == null);
-				//numberOfnewLoadingstations = newLoadingstations(currentNew, currentKey); 
-				if(currentKey.equals("0294912101114121")){
+
+				if (currentKey.equals("0078644100786440")) {
 					System.out.println();
 				}
-				list = FeasibilityHelper.newLoadingstations(currentNew, stoppoints, deadruntimes, servicejourneys);
+				chargingList = FeasibilityHelper.roundtripWithCharging(currentNew, stoppoints, deadruntimes, servicejourneys, umlaeufe.get(0));
 
-				if (list == null){ // falls der Umlauf nicht moeglich ist
+				if (chargingList == null){ // falls der Umlauf nicht moeglich ist
 					currenntSavingsMatrix.remove(currentKey); // aktuell betrachtete Savings werden auf 0 gesetzt
-				}else if(list.get(0).isEmpty()){ // der neue Umlauf ist ohne den Bau von Ladestationen moeglich
+				}else if(chargingList.getBuild().isEmpty()){ // der neue Umlauf ist ohne den Bau von Ladestationen moeglich
 					continue;
 				}else{ // falls Ladestationen gebaut werden koennen
-					int kosten = list.get(0).size() * 250000; // berechne Fixkosten von Ladestationen
-					double neueSavings = currenntSavingsMatrix.get(currentKey) - kosten; // aktualisiere Saving von currentKey
-					currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
+					//int kosten = chargingList.getBuild().size() * 250000; // berechne Fixkosten von Ladestationen
+					//double neueSavings = currenntSavingsMatrix.get(currentKey) - kosten; // aktualisiere Saving von currentKey
+					//double neueSavings = currenntSavingsMatrix.get(currentKey);
+					//currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 				}
 				keys.add(currentKey); // currentKey wird als betrachtet gespeichert 
 			}
 			else {
 				currentNew = umlaeufeZusammenlegen(currentKey);
-				list = FeasibilityHelper.newLoadingstations(currentNew, stoppoints, deadruntimes, servicejourneys);
+				chargingList = FeasibilityHelper.roundtripWithCharging(currentNew, stoppoints, deadruntimes, servicejourneys, umlaeufe.get(0));
 				}
 		} while (currentKey != getHighestSaving(currenntSavingsMatrix)); // solange die Savings Matrix veraendert wird bzw. die vormal groessten Savings auf Grund der Veranedrung nicht mehr die groessten Savings sind
 
-		if(currentKey.equals("0294912101114121")){
-			System.out.println();
-		}
 		if(!umlaufplan.isFeasible()){
 			System.err.println("Fehler: Umlaufplan nicht möglich!");
 			System.out.println(currentKey);
 		}
 
-		for (int i = 0; i < list.get(0).size(); i++) {
-			Stoppoint x = (Stoppoint) list.get(0).get(i);
-			if(x.isLoadingstation() == false){
-				x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
-				umlaufplan.getStoppointsWithLoadingStations().put(x.getId(), x);
-				System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
-			}
-		}
-		
-		/**
-		 * Fahrzeugumlaeufe aktualisieren:
-		 * Der zusammengelegte Umlauf ueberschreibt den ersten der beiden alten Umlaeufe, aus der er besteht.
-		 * Der zweite wird aus der Liste der Umlaeufe geloescht.
-		 */
-		ArrayList<Integer> umlaeufe = umlaeufeFinden(currentKey);
-		for (int i = 0; i < roundtrips.size(); i++) {
-			if (roundtrips.get(i).getId() == umlaeufe.get(0)) {
-				roundtrips.get(i).setJourneys(currentNew);
-				roundtrips.get(i).setStellen(list.get(1));
-				roundtrips.get(i).setLaden(list.get(1));
-			break;
-			}
-		}
-
+		Roundtrip einsAlt = null;
+		Roundtrip zweiAlt = null;
 		for (int j = 0; j < roundtrips.size(); j++) {
-			if (roundtrips.get(j).getId() == umlaeufe.get(1)) {
+			if (roundtrips.get(j).getId() == umlaeufe.get(0)) {
+				einsAlt = roundtrips.get(j);
 				roundtrips.remove(j);
 			}
 		}
-
-		if(currentKey.equals("0294912101114121")){
-			System.out.println();
+		for (int j = 0; j < roundtrips.size(); j++) {
+			if (roundtrips.get(j).getId() == umlaeufe.get(1)) {
+				zweiAlt = roundtrips.get(j);
+				roundtrips.remove(j);
+			}
 		}
+		
+		ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+		if (!einsAlt.getCharge().contains(null)) {
+			decreaseFrequencyAt.addAll(einsAlt.getCharge());
+		}
+		if (!zweiAlt.getCharge().contains(null)) {
+			decreaseFrequencyAt.addAll(zweiAlt.getCharge());
+		}
+		for (int i1 = 0; i1 < decreaseFrequencyAt.size(); i1++) {
+			if (decreaseFrequencyAt.contains(null)) {
+				System.err.println("Attention!");
+			}
+			Stoppoint current = decreaseFrequencyAt.get(i1);
+			current.setFrequency(current.getFrequency()-1);
+			if(current.getFrequency() == 0){
+				current.setLoadingstation(false);
+				for (int i = 0; i < umlaufplan.getStoppointsWithLoadingStations().size(); i++) {
+					if (umlaufplan.getStoppointsWithLoadingStations().get(i).getId().equals(current.getId())) {
+						umlaufplan.getStoppointsWithLoadingStations().remove(i);
+					}
+				}
+				for (int j = 0; j < umlaufplan.getUmlaufplan().size(); j++) {
+					for (int j2 = 0; j2 < umlaufplan.getUmlaufplan().get(j).getCharge().size(); j2++) {
+						if (umlaufplan.getUmlaufplan().get(j).getCharge().get(j2) != null){
+							if (umlaufplan.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+								umlaufplan.getUmlaufplan().get(j).getCharge().remove(j2);
+							}
+						}
+					}
+				}
+				//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+			}
+		}
+		for (int i = 0; i < chargingList.getCharge().size(); i++) {
+			Stoppoint x = (Stoppoint) chargingList.getCharge().get(i);
+			if(x.isLoadingstation() == false){
+				x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+				x.setFrequency(1);
+				umlaufplan.getStoppointsWithLoadingStations().add(x);
+				System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+			}
+			else{
+				x.setFrequency(x.getFrequency()+1);
+			}
+		}
+
+		roundtrips.add(chargingList);
+
 		if(!umlaufplan.isFeasible()){
 			System.err.println("Fehler: Umlaufplan nicht möglich!");
 			System.out.println(currentKey);
@@ -360,7 +433,6 @@ public class Savings {
 
 		LinkedList<Journey> neu = null; // Container fuer den neu zu erstellenden Umlauf
 
-		
 		ArrayList<Integer> umlaeufe = umlaeufeFinden(key); // Die beiden Umlaeufe, die zusammengelegt werden sollen
 
 		LinkedList<Journey> eins = new LinkedList<Journey>();
@@ -379,14 +451,17 @@ public class Savings {
 		}
 		
 		eins.removeLast(); // loesche letzte Fahrt von eins (Einrueckfahrt)
+		if(eins.getLast() instanceof Deadruntime){ // eins hatte am Ende einen Umweg
+			eins.removeLast(); // damit nicht drei Leerfahrten aufeinander folgen können
+		}
 		zwei.removeFirst(); // loesche erste Fahrt von zwei (Ausrueckfahrt)
 		if(zwei.getFirst() instanceof Deadruntime){ // zwei hatte zu Beginn einen Umweg
 			zwei.removeFirst(); // damit nicht drei Leerfahrten aufeinander folgen können
 		}
-		neu = eins;
-		if(neu.getLast() instanceof Deadruntime){
-			neu.removeLast();
+		if (!FeasibilityHelper.compatibility((Servicejourney)eins.getLast(), (Servicejourney)zwei.getFirst(), deadruntimes)) {
+			return neu; // neu ist null und damit nicht zulaessig
 		}
+		neu = eins;
 		neu.add(deadruntimes.get(eins.getLast().getToStopId()+zwei.getFirst().getFromStopId())); // neu entstehende Leerfahrt zwischen eins und zwei
 		neu.addAll(zwei);
 
@@ -526,10 +601,9 @@ public class Savings {
 			if (i1.isLoadingstation()) {
 				isLoadingstation = "true";
 				for (int i = 0; i < umlaufplan.getUmlaufplan().size(); i++) {
-					for (int j = 0; j < umlaufplan.getUmlaufplan().get(i).getLaden().size(); j++) {
-						if(umlaufplan.getUmlaufplan().get(i).getLaden().get(j).getId().equals(i1.getId())){
+					for (int j = 0; j < umlaufplan.getUmlaufplan().get(i).getCharge().size(); j++) {
+						if(umlaufplan.getUmlaufplan().get(i).getCharge().get(j).getId().equals(i1.getId())){
 							counter ++;
-							i1.setFrequency(i1.getFrequency() + 1);
 						}
 					}
 				}
