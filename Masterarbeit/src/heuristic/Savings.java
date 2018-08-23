@@ -297,6 +297,9 @@ public class Savings {
 			}
 			if(!keys.contains(currentKey)){ // falls diese Savings noch nicht betrachtet worden sind
 				do{
+					if(currenntSavingsMatrix.isEmpty()){ 
+						return currenntSavingsMatrix; // in diesem Fall (es gibt keine Savings) werden die Pendeltouren zurueckgegeben
+					}
 					currentNew = umlaeufeZusammenlegen(currentKey); // lege die beiden Umlaeufe mit den groessten Savings zusammen
 					umlaeufe = umlaeufeFinden(currentKey);
 					if(currentNew == null){
@@ -314,11 +317,19 @@ public class Savings {
 					currenntSavingsMatrix.remove(currentKey); // aktuell betrachtete Savings werden auf 0 gesetzt
 				}else if(chargingList.getBuild().isEmpty()){ // der neue Umlauf ist ohne den Bau von Ladestationen moeglich
 					continue;
-				}else{ // falls Ladestationen gebaut werden koennen
-					//int kosten = chargingList.getBuild().size() * 250000; // berechne Fixkosten von Ladestationen
-					//double neueSavings = currenntSavingsMatrix.get(currentKey) - kosten; // aktualisiere Saving von currentKey
-					//double neueSavings = currenntSavingsMatrix.get(currentKey);
-					//currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
+				}else{ // falls Ladestationen gebaut werden muessen
+					if(chargingList.getBuild().size() > 2){
+						double neueSavings = 0; // setze savings auf 50, um das bauen von mehr als 2 Ladestationen zu verbieten
+						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
+					}
+					else if(chargingList.getBuild().size() == 2){
+						double neueSavings = 50; // setze savings auf 50, um das bauen von max. 2 Ladestationen zu erlauben
+						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
+					}
+					else{
+						double neueSavings = currenntSavingsMatrix.get(currentKey)-10000; // verringerte Strafkosten bei einer Ladestation
+						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
+					}
 				}
 				keys.add(currentKey); // currentKey wird als betrachtet gespeichert 
 			}

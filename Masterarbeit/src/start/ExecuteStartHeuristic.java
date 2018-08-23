@@ -22,6 +22,6 @@ public class ExecuteStartHeuristic {
 		
 		Savings initialSolution = new Savings(data);
 		initialSolution.startSavings();
-		initialSolution.writeInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_434_SF_207_stoppoints_initialloesung_ohneLadestationen.txt");
+		initialSolution.writeInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_867_SF_207_stoppoints_initialloesung.txt");
 	}
 }

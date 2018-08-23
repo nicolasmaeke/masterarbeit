@@ -7,7 +7,7 @@ import parser.ReadInitialSolution;
 public class StartAfterInitialSolution {
 
 	public static void main(String[] args) {
-		ReadInitialSolution data = new ReadInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_867_SF_207_stoppoints_initialloesung_ohneLadestationen.txt");
+		ReadInitialSolution data = new ReadInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_867_SF_207_stoppoints_initialloesung.txt");
 		//data.printInitialSolution();
 		data.defineDepotCapacity();
 		data.setInitialSolutionVariables();

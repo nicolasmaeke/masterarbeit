@@ -1856,21 +1856,7 @@ public class VariableNeighborhoodSearch {
 		if(!eins.equals(betterEins) && betterEins != null){ // falls mindestens eine Verbesserung vorhanden ist, wird die Beste zurueckgegeben
 			Roundtrip newSmallerTrip = null;
 			double penaltyFactor = 0.0;
-			int oldFrequency = 0;
-			int newFrequency = 0;
-			for (int i = 0; i < eins.getCharge().size(); i++) {
-				oldFrequency = oldFrequency + eins.getCharge().get(i).getFrequency();
-			}
-			for (int i = 0; i < zwei.getCharge().size(); i++) {
-				oldFrequency = oldFrequency + zwei.getCharge().get(i).getFrequency();
-			}
 			if(betterZwei != null){
-				for (int i = 0; i < betterEins.getCharge().size(); i++) {
-					newFrequency = newFrequency + betterEins.getCharge().get(i).getFrequency();
-				}
-				for (int i = 0; i < betterZwei.getCharge().size(); i++) {
-					newFrequency = newFrequency + betterZwei.getCharge().get(i).getFrequency();
-				}
 				if (betterEins.getJourneys().size() <= betterZwei.getJourneys().size()) {
 					newSmallerTrip = betterEins;
 				}
@@ -1881,15 +1867,9 @@ public class VariableNeighborhoodSearch {
 					penaltyFactor = newSmallerTrip.getJourneys().size() - smallerTrip.getJourneys().size();
 				}
 			}
-			else{
-				for (int i = 0; i < betterEins.getCharge().size(); i++) {
-					newFrequency = newFrequency + betterEins.getCharge().get(i).getFrequency();
-				}
-			}
-			//double fictiveSavings = (oldFrequency - newFrequency)*1000;
-			//double penaltyCosts = (penaltyFactor*400000*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
-			//savings = initialCostValue - currentCostValue - penaltyCosts;
-			savings = initialCostValue - currentCostValue;
+			double penaltyCosts = (penaltyFactor*400000*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
+			savings = initialCostValue - currentCostValue - penaltyCosts;
+			//savings = initialCostValue - currentCostValue;
 			result.setSavings(savings);
 			result.setEins(betterEins);
 			result.setZwei(betterZwei);
