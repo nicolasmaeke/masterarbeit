@@ -52,7 +52,7 @@ public class Savings {
 		int iteration = 0;
 		
 		do {
-			if(iteration == 393){
+			if(iteration == 250){
 				System.out.println();
 			}
 			savingsMatrix = neuerUmlaufplan(savingsMatrix);
@@ -289,7 +289,7 @@ public class Savings {
 				return currenntSavingsMatrix; // in diesem Fall (es gibt keine Savings) werden die Pendeltouren zurueckgegeben
 			}
 			currentKey = getHighestSaving(currenntSavingsMatrix); 
-			if (currentKey.equals("0078644100786440")) {
+			if (currentKey.equals("0091754800720911")) {
 				System.out.println();
 			}
 			if(currenntSavingsMatrix.get(currentKey) <= 0.0){ // falls der groesste Saving ≤ 0
@@ -308,7 +308,7 @@ public class Savings {
 					}
 				} while (currentNew == null);
 
-				if (currentKey.equals("0078644100786440")) {
+				if (currentKey.equals("0091754800720911")) {
 					System.out.println();
 				}
 				chargingList = FeasibilityHelper.roundtripWithCharging(currentNew, stoppoints, deadruntimes, servicejourneys, umlaeufe.get(0));
@@ -327,7 +327,7 @@ public class Savings {
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else{
-						double neueSavings = currenntSavingsMatrix.get(currentKey)-10000; // verringerte Strafkosten bei einer Ladestation
+						double neueSavings = currenntSavingsMatrix.get(currentKey)-25000; // verringerte Strafkosten bei einer Ladestation
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 				}

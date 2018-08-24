@@ -1868,6 +1868,7 @@ public class VariableNeighborhoodSearch {
 				}
 			}
 			double penaltyCosts = (penaltyFactor*400000*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
+			//double penaltyCosts = (penaltyFactor*400000) / smallerTrip.getJourneys().size();
 			savings = initialCostValue - currentCostValue - penaltyCosts;
 			//savings = initialCostValue - currentCostValue;
 			result.setSavings(savings);
