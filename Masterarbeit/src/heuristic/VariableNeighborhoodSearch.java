@@ -434,8 +434,8 @@ public class VariableNeighborhoodSearch {
 			flag = 1;
 		}
 
-		//double initialCosts = small.getKostenMitLadestationen() + big.getKostenMitLadestationen();
-		double initialCosts = small.getKosten() + big.getKosten();
+		double initialCosts = small.getKostenMitLadestationen() + big.getKostenMitLadestationen();
+		//double initialCosts = small.getKosten() + big.getKosten();
 
 		ArrayList<Servicejourney> sjOfSmall = new ArrayList<Servicejourney>(); // Liste aller SF vom kleineren Umlauf
 		for (int i = 1; i < small.getJourneys().size()-1; i++) {
@@ -766,12 +766,12 @@ public class VariableNeighborhoodSearch {
 								fictiveSavings = 400000/(small.getNumberOfServicejourneys()) - (verbrauchsKosten + personalkosten);
 
 								if(newSmall.getJourneys().size() == 0){
-									//newCosts = newBig.getKostenMitLadestationen();
-									newCosts = newBig.getKosten();
+									newCosts = newBig.getKostenMitLadestationen();
+									//newCosts = newBig.getKosten();
 								}
 								else{
-									//newCosts = newSmall.getKostenMitLadestationen() + newBig.getKostenMitLadestationen();
-									newCosts = newSmall.getKosten() + newBig.getKosten();
+									newCosts = newSmall.getKostenMitLadestationen() + newBig.getKostenMitLadestationen();
+									//newCosts = newSmall.getKosten() + newBig.getKosten();
 								}
 
 								savings = (initialCosts - newCosts) + fictiveSavings;
