@@ -13,7 +13,7 @@ public class StartAfterInitialSolution {
 		data.setInitialSolutionVariables();
 		
 		VariableNeighborhoodSearch improvement = new VariableNeighborhoodSearch(data);
-		improvement.startVNS(10000, 50);
+		improvement.startVNS(10000, 50, "/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_867_SF_207_stoppoints_solution.txt");
 		/**
 		VNSwoShaking improvement = new VNSwoShaking(data);
 		improvement.startVNS(10000, 50);

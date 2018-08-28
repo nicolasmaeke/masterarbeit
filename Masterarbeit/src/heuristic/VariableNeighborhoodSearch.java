@@ -1,10 +1,16 @@
 package heuristic;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+
+import javax.xml.bind.JAXBElement.GlobalScope;
 
 import com.rits.cloning.Cloner;
 import helper.FeasibilityHelper;
@@ -35,7 +41,7 @@ public class VariableNeighborhoodSearch {
 		globalBest.printLoadingstations();
 	}
 
-	public void startVNS(int iterations, int kMax){
+	public void startVNS(int iterations, int kMax, String path){
 		int i = 1;
 		while(i <= iterations){
 			shaking();
@@ -55,6 +61,7 @@ public class VariableNeighborhoodSearch {
 					globalBest.printUmlaufplan();
 				}
 			}
+			writeTempSolution(path);
 			System.out.println("Iteration: " + i);
 			i++;
 		}
@@ -1904,5 +1911,23 @@ public class VariableNeighborhoodSearch {
 			}
 		}
 		return minimal;
+	}
+	
+	public void writeTempSolution(String path){
+		FileWriter fw = null;
+		BufferedWriter bw = null;
+		PrintWriter pw = null;
+		try {
+			// waehle Zielpfad und Name der Ergebnis-Datei aus
+			fw = new FileWriter(path, true);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} 
+		bw = new BufferedWriter(fw); 
+		pw = new PrintWriter(bw);
+		String result = globalBest.getUmlaufplan().size() + ";" + globalBest.getNumberOfLoadingStations() + ";" 
+		+ globalBest.getFixCosts() + ";" + globalBest.getVariableCosts() + ";" + globalBest.getTotalCosts();
+		pw.println(result);
+		pw.flush();
 	}
 }
