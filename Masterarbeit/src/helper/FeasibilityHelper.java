@@ -261,13 +261,11 @@ public class FeasibilityHelper {
 										// Ueberpruefe ob der Umweg von der Kapazitaet her zulaessig ist
 										if(capacity >= currentDetourOne.getEnergyConsumption()){
 											frequencyOfLoad = e.getValue().getFrequency();
-											if (zeitpufferFuerUmweg(currentDetourOne, currentDetourTwo, beforeDr, afterDr, capacity)){
-												if(frequencyOfLoad > maxFrequency){ // ist der Umweg kuerzer als bisher gefundene Umwege?									minimalCosts = costOfDetour; 
-													maxFrequency = frequencyOfLoad; 
-													bestDetourOne = currentDetourOne;
-													bestDetourTwo = currentDetourTwo;
-													load = e.getValue(); // speicher die Haltestelle an der mit Umweg geladen werden kann
-												}
+											if(frequencyOfLoad > maxFrequency){ // ist der Umweg kuerzer als bisher gefundene Umwege?									minimalCosts = costOfDetour; 
+												maxFrequency = frequencyOfLoad; 
+												bestDetourOne = currentDetourOne;
+												bestDetourTwo = currentDetourTwo;
+												load = e.getValue(); // speicher die Haltestelle an der mit Umweg geladen werden kann
 											}
 										}
 									}

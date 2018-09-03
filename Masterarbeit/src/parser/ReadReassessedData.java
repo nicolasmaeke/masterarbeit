@@ -153,13 +153,15 @@ public class ReadReassessedData {
 				counter ++;
 			}
 		}
-		for (Map.Entry<String, Stoppoint> entry : stoppoints.entrySet()) { // dann zufaellig weitere Depots
-			Depot d = new Depot(entry.getKey());
-			depots.add(d);
-			stoppoints.get(entry.getKey()).setDepot(true);
-			counter ++;
-			if (counter == numberOfDepots) {
-				break;
+		if(counter < numberOfDepots){
+			for (Map.Entry<String, Stoppoint> entry : stoppoints.entrySet()) { // dann zufaellig weitere Depots
+				Depot d = new Depot(entry.getKey());
+				depots.add(d);
+				stoppoints.get(entry.getKey()).setDepot(true);
+				counter ++;
+				if (counter == numberOfDepots) {
+					break;
+				}
 			}
 		}
 	}
