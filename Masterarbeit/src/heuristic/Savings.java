@@ -327,7 +327,7 @@ public class Savings {
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else{
-						double neueSavings = currenntSavingsMatrix.get(currentKey)-25000; // verringerte Strafkosten bei einer Ladestation
+						double neueSavings = currenntSavingsMatrix.get(currentKey)-10000; // verringerte Strafkosten bei einer Ladestation
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 				}
