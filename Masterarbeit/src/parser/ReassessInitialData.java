@@ -104,6 +104,9 @@ public class ReassessInitialData {
 					// (die Parameter des Typs Stoppoint sind redundant, deswegen nur der erste Parameter geschrieben)
 					writer.flush();
 					temp = reader.readLine(); // nächste Zeile (das erste Objekt des Typs Stoppoint)
+					while(temp.length() == 0) {
+						temp = reader.readLine();
+					}
 					ersteszeichen = temp.substring(0, 1); // erstes Zeichen                 
 
 					while (temp != null && !ersteszeichen.equals("*")) { 
@@ -120,6 +123,9 @@ public class ReassessInitialData {
 
 						temp = spId; // ersetze neue ID mit 5-Ziffern
 						temp = reader.readLine(); // nächste Zeile (das nächste Objekt des Typs Stoppoint)
+						while(temp.length() == 0) {
+							temp = reader.readLine();
+						}
 						ersteszeichen = temp.substring(0, 1); // erstes Zeichen
 						
 					} // end while
@@ -139,6 +145,9 @@ public class ReassessInitialData {
 					writer.println(temp);
 					writer.flush();
 					temp = reader.readLine(); // nächste Zeile (das erste Objekt des Typs Servicejourney)
+					while(temp.length() == 0) {
+						temp = reader.readLine();
+					}
 					ersteszeichen = temp.substring(0, 1); // erstes Zeichen                   
 
 					while (temp != null && !ersteszeichen.equals("*")) {
@@ -170,6 +179,9 @@ public class ReassessInitialData {
 						writer.println(temp); // schreibe Zeile mit neuen IDs
 						writer.flush();
 						temp = reader.readLine(); // lese nächste Zeile
+						while(temp.length() == 0) {
+							temp = reader.readLine();
+						}
 						ersteszeichen = temp.substring(0, 1); // erstes Zeichen  
 
 					} // end while         
@@ -184,6 +196,9 @@ public class ReassessInitialData {
 					writer.println(temp);
 					writer.flush();
 					temp = reader.readLine(); // nächste Zeile (das erste Objekt des Typs Deadruntime)
+					while(temp.length() == 0) {
+						temp = reader.readLine();
+					}
 					ersteszeichen = temp.substring(0, 1); // erstes Zeichen
 
 					while (temp != null && !ersteszeichen.equals("*")) {
@@ -210,6 +225,12 @@ public class ReassessInitialData {
 						writer.println(temp);
 						writer.flush();
 						temp = reader.readLine();
+						if(temp == null) {
+							break;
+						}
+						while(temp.length() == 0) {
+							temp = reader.readLine();
+						}
 
 					} // end while
 
