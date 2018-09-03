@@ -147,9 +147,15 @@ public class ReadReassessedData {
 	public void assignDepot(int numberOfDepots){
 		int counter = 0;
 		for (Map.Entry<String, Stoppoint> entry : stoppoints.entrySet()) {
+			if(entry.getValue().getId().startsWith("0000")){ // zuerst die Depots, die in der Instanz als solche ausgewiesen sind
+				Depot d = new Depot(entry.getKey());
+				depots.add(d);
+				counter ++;
+			}
+		}
+		for (Map.Entry<String, Stoppoint> entry : stoppoints.entrySet()) { // dann zufaellig weitere Depots
 			Depot d = new Depot(entry.getKey());
 			depots.add(d);
-			// stoppoints.remove(entry.getKey(), entry.getValue());
 			stoppoints.get(entry.getKey()).setDepot(true);
 			counter ++;
 			if (counter == numberOfDepots) {
