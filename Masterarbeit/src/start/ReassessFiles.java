@@ -16,8 +16,8 @@ public class ReassessFiles {
 	 */
 	public static void main(String[] args) {
 		//Lese Daten ein (fuer den Pfad siehe data --> Rechtsklick auf die gewuenschte Datei --> Properties)
-		ReassessInitialData test = new ReassessInitialData("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/sample_real_1296_SF_88_stoppoints.txt", 
-				"/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_1296_SF_88_stoppoints.txt");
+		ReassessInitialData test = new ReassessInitialData("C:\\Users\\Nicolas\\git\\masterarbeit\\Masterarbeit\\data\\full_sample_real_2633_SF_67_stoppoints.txt", 
+				"C:\\Users\\Nicolas\\git\\masterarbeit\\Masterarbeit\\data\\full_sample_real_2633_SF_67_stoppoints.txt");
 
 		System.out.println(test.avgDistanceDeadrun);
 		System.out.println(test.avgRuntimeDeadrun);

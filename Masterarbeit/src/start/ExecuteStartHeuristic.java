@@ -16,12 +16,12 @@ public class ExecuteStartHeuristic {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		ReadReassessedData data = new ReadReassessedData("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_1296_SF_88_stoppoints.txt");
+		ReadReassessedData data = new ReadReassessedData("C:\\Users\\Nicolas\\git\\masterarbeit\\Masterarbeit\\data\\full_sample_real_1135_SF_101_stoppoints.txt");
 		data.assignDepot(3);
 		//data.printDepots();
 		
 		Savings initialSolution = new Savings(data);
 		initialSolution.startSavings();
-		initialSolution.writeInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_1296_SF_88_stoppoints_initialloesung.txt");
+		initialSolution.writeInitialSolution("C:\\Users\\Nicolas\\git\\masterarbeit\\Masterarbeit\\data\\full_sample_real_1135_SF_101_stoppoints.txt_initialloesung");
 	}
 }

@@ -112,9 +112,9 @@ public class ReassessInitialData {
 						String spId = (temp.split(";")[0]) ; // die Parameter eines Objekts werden mit Semikolom getrennt
 
 						// solange Anzahl Zeichen von ID < 5, füge "0" vorne hinzu, damit der Parameter immer gleich viele Zeichen hat
-						do {
+						while(spId.length() < 5){
 							spId = "0" + spId;
-						} while (spId.length() < 5);
+						}
 
 						listStopPoints.add(spId);
 
