@@ -16,20 +16,15 @@ public class ExecuteStartHeuristic {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-<<<<<<< HEAD
-		ReadReassessedData data = new ReadReassessedData("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_1135_SF_101_stoppoints.txt");
-=======
-		ReadReassessedData data = new ReadReassessedData("C:\\Users\\Nicolas\\git\\masterarbeit\\Masterarbeit\\data\\full_sample_real_867_SF_207_stoppoints.txt");
->>>>>>> branch 'master' of https://github.com/nicolasmaeke/masterarbeit.git
-		data.assignDepot(1);
+
+		ReadReassessedData data = new ReadReassessedData("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/data/full_sample_real_867_SF_207_stoppoints.txt");
+		data.assignDepot(5);
 		data.printDepots();
 		
 		Savings initialSolution = new Savings(data);
 		initialSolution.startSavings();
-<<<<<<< HEAD
-		initialSolution.writeInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/full_sample_real_1135_SF_101_stoppoints_initialloesung_1Depot.txt");
-=======
-		initialSolution.writeInitialSolution("C:\\Users\\Nicolas\\git\\masterarbeit\\Masterarbeit\\data\\full_sample_real_867_SF_207_stoppoints_initialloesung_1Depot");
->>>>>>> branch 'master' of https://github.com/nicolasmaeke/masterarbeit.git
+
+		initialSolution.writeInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/initial/full_sample_real_867_SF_207_stoppoints_initialloesung_5Depot.txt");
+
 	}
 }
