@@ -21,7 +21,7 @@ public class ReassessFiles {
 
 		System.out.println(test.avgDistanceDeadrun);
 		System.out.println(test.avgRuntimeDeadrun);
-
+		System.out.println(test.avgDistanceServicejourney);
 		System.out.println(test.listStopPoints.size());
 		System.out.println((test.listFromToDeadRun.size()));
 

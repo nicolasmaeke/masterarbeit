@@ -37,6 +37,7 @@ public class ReassessInitialData {
 	public int avgDistanceDeadrun;
 	public int avgRuntimeDeadrun;
 	public int avgDistanceServicejourney;
+	public int avgRuntimeServicejourney;
 	public int totalRuntime;
 	public int totalDistance;
 	public int totalDistanceServicejourney;
@@ -45,6 +46,7 @@ public class ReassessInitialData {
 	public Vector<String> listServiceJourney = new Vector<String>();
 	public Vector<String> listFromToServiceJourney = new Vector<String>();
 	public Vector<Integer> listDistanceServiceJourney = new Vector<Integer>();
+	public Vector<Integer> listRuntimeServiceJourney = new Vector<Integer>();
 	public Vector<String> listDeadRun = new Vector<String>();
 	public Vector<String> listFromToDeadRun = new Vector<String>();
 	public Vector<Integer> listDistanceDeadRun = new Vector<Integer>();
@@ -184,7 +186,13 @@ public class ReassessInitialData {
 						}
 						ersteszeichen = temp.substring(0, 1); // erstes Zeichen  
 
-					} // end while         
+					} // end while  
+					
+
+					for(int i = 0; i < listDistanceServiceJourney.size(); i++) {
+						totalDistanceServicejourney += listDistanceServiceJourney.get(i);
+					} 
+					avgDistanceServicejourney = totalDistanceServicejourney / listDistanceServiceJourney.size();                     
 
 					continue;
 				} // end if
