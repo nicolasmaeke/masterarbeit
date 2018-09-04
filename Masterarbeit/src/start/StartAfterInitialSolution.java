@@ -8,7 +8,7 @@ public class StartAfterInitialSolution {
 
 	public static void main(String[] args) {
 
-		ReadInitialSolution data = new ReadInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/initial/full_sample_real_867_SF_207_stoppoints_initialloesung_1Depot.txt");
+		ReadInitialSolution data = new ReadInitialSolution("/Users/nicolasmaeke/gitproject/masterarbeit/Masterarbeit/data/initial/full_sample_real_434_SF_207_stoppoints_initialloesung_1Depot.txt");
 
 		//data.printInitialSolution();
 		data.defineDepotCapacity();
