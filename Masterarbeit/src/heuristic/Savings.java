@@ -36,6 +36,12 @@ public class Savings {
 	private HashMap<String, Servicejourney> servicejourneys;
 	private List <Depot> depots;
 	private Schedule umlaufplan;
+	private double avgRuntimeServicejourney;
+	private double avgDistanceServicejourney;
+	private double totalDistanceServicejourney = 0;
+	private double totalRuntime = 0;
+	private double avgDistanceDeadrun;
+	private double totalDistanceDeadrun = 0;
 
 	public Savings(ReadReassessedData data){
 		this.servicejourneys = data.getServicejourneys();
@@ -46,15 +52,42 @@ public class Savings {
 	}
 
 	public void startSavings(){
+		Vector<Double> listRuntimeServiceJourney = new Vector<Double>();
+		for (Entry<String, Servicejourney> e: servicejourneys.entrySet()){ 
+			listRuntimeServiceJourney.add(e.getValue().getRuntime());
+		}
+		for(int i = 0; i < listRuntimeServiceJourney.size(); i++) {
+			totalRuntime += listRuntimeServiceJourney.get(i); 
+		}
+		avgRuntimeServicejourney = totalRuntime / listRuntimeServiceJourney.size();
+		System.out.println("avgRuntimeServicejourney" + avgRuntimeServicejourney/1000); // in Sekunden
+		
+		Vector<Double> listDistanceServiceJourney = new Vector<Double>();
+		for (Entry<String, Servicejourney> e: servicejourneys.entrySet()){ 
+			listDistanceServiceJourney.add(e.getValue().getDistance());
+		}
+		for(int i = 0; i < listDistanceServiceJourney.size(); i++) {
+			totalDistanceServicejourney += listDistanceServiceJourney.get(i); 
+		}
+		avgDistanceServicejourney = totalDistanceServicejourney / listDistanceServiceJourney.size();
+		System.out.println("avgDistanceServicejourney " + avgDistanceServicejourney); // in Sekunden
+		
+		Vector<Double> listDistanceDeadrun = new Vector<Double>();
+		for (Entry<String, Deadruntime> e: deadruntimes.entrySet()){ 
+			listDistanceDeadrun.add(e.getValue().getDistance());
+		}
+		for(int i = 0; i < listDistanceDeadrun.size(); i++) {
+			totalDistanceDeadrun += listDistanceDeadrun.get(i); 
+		}
+		avgDistanceDeadrun = totalDistanceDeadrun / listDistanceDeadrun.size();
+		System.out.println("avgDistanceDeadrun " + avgDistanceDeadrun); // in Sekunden
+		
 		createPendeltours();
 		double valueSaving = 0.0;
 		HashMap <String, Double> savingsMatrix = new HashMap<String, Double>();
 		int iteration = 0;
 		
 		do {
-			if(iteration == 258){
-				System.out.println();
-			}
 			savingsMatrix = neuerUmlaufplan(savingsMatrix);
 			valueSaving = 0.0;
 			for (Entry<String, Double> e: savingsMatrix.entrySet()){ 
@@ -203,7 +236,7 @@ public class Savings {
 				System.out.println("Kapazitaet reicht nicht fuer Pendeltouren aus. Deswegen Ladestation bauen!");
 				for (Map.Entry<String, Stoppoint> e: stoppoints.entrySet()){
 					Stoppoint i1 = stoppoints.get(e.getKey());
-					if (i1.getId().equals(firstSf.getToStopId())){
+					if (i1.getId().equals(firstSf.getFromStopId())){
 						i1.setLoadingstation(true);
 						i1.setFrequency(1);
 					}
@@ -289,9 +322,7 @@ public class Savings {
 				return currenntSavingsMatrix; // in diesem Fall (es gibt keine Savings) werden die Pendeltouren zurueckgegeben
 			}
 			currentKey = getHighestSaving(currenntSavingsMatrix); 
-			if (currentKey.equals("0026215000262155")) {
-				System.out.println();
-			}
+
 			if(currenntSavingsMatrix.get(currentKey) <= 0.0){ // falls der groesste Saving ≤ 0
 				return currenntSavingsMatrix; // hoert auf & aktuelle Fahrzeugumlaeufe zurueckgeben
 			}
@@ -308,9 +339,6 @@ public class Savings {
 					}
 				} while (currentNew == null);
 
-				if (currentKey.equals("0026215000262155")) {
-					System.out.println();
-				}
 				chargingList = FeasibilityHelper.roundtripWithCharging(currentNew, stoppoints, deadruntimes, servicejourneys, umlaeufe.get(0));
 
 				if (chargingList == null){ // falls der Umlauf nicht moeglich ist
@@ -319,15 +347,15 @@ public class Savings {
 					continue;
 				}else{ // falls Ladestationen gebaut werden muessen
 					if(chargingList.getBuild().size() > 2){
-						double neueSavings = 0; // setze savings auf 50, um das bauen von mehr als 2 Ladestationen zu verbieten
+						double neueSavings = 0; // setze savings auf 0, um das bauen von mehr als 2 Ladestationen zu verbieten
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else if(chargingList.getBuild().size() == 2){
-						double neueSavings = 50; // setze savings auf 50, um das bauen von max. 2 Ladestationen zu erlauben
+						double neueSavings = currenntSavingsMatrix.get(currentKey) - 399550; // setze savings auf 50, um das bauen von max. 2 Ladestationen zu erlauben
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else{
-						double neueSavings = currenntSavingsMatrix.get(currentKey)-30000; // verringerte Strafkosten bei einer Ladestation
+						double neueSavings = currenntSavingsMatrix.get(currentKey)-(avgDistanceServicejourney+avgDistanceDeadrun); // verringerte Strafkosten bei einer Ladestation
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 				}
