@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import javax.xml.bind.JAXBElement.GlobalScope;
 
 import com.rits.cloning.Cloner;
+
 import helper.FeasibilityHelper;
 import helper.Verbesserungsobjekt;
 import model.Deadruntime;
@@ -47,8 +48,13 @@ public class VariableNeighborhoodSearch {
 			shaking();
 
 			bestImprovement(kMax);
-			
+
 			if(localBest.getTotalCosts() <= globalBest.getTotalCosts()){
+				globalBest = clone.deepClone(localBest);
+				globalBest.calculateCosts();
+				globalBest.printLoadingstations();
+				globalBest.printUmlaufplan();
+				/**
 				if(localBest.getTotalCosts() <= shaking.getTotalCosts()){ 
 					globalBest = clone.deepClone(localBest);
 					globalBest.calculateCosts();
@@ -60,11 +66,13 @@ public class VariableNeighborhoodSearch {
 					globalBest.printLoadingstations();
 					globalBest.printUmlaufplan();
 				}
+				 */
 			}
 			writeTempSolution(path);
 			System.out.println("Iteration: " + i);
 			i++;
 		}
+		writeDepots(path);
 	}
 
 	/** Shaking: Stochastisches Element der VNS: 	
@@ -125,14 +133,14 @@ public class VariableNeighborhoodSearch {
 				einsNeu.addFahrtAfterFahrt(i+1, deadruntimes.get(einsNeu.getJourneys().get(i).getToStopId() + einsNeu.getJourneys().get(i+1).getFromStopId())); // alle inneren LF einfuegen
 			}
 			einsNeu.getJourneys().add(deadruntimes.get(einsNeu.getJourneys().getLast().getToStopId() + eins.getDepot())); // Einrueckfahrt einfuegen
-			
+
 			String startDepotEins = einsNeu.getJourneys().getFirst().getFromStopId();
 			String EndDepotEins = einsNeu.getJourneys().getLast().getToStopId();
 			if (!startDepotEins.equals(EndDepotEins)){ // der Umlauf hat unterschiedliche Depots
 				String bestDepot = FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes);
 				FeasibilityHelper.assignBestDepot(einsNeu, bestDepot, deadruntimes);
 			}
-			
+
 			if (einsNeu.isFeasible()) {
 
 				// zweiNeu bauen
@@ -251,7 +259,7 @@ public class VariableNeighborhoodSearch {
 				}
 			}
 			counter ++;
-			if (counter >= 1000) { // 2. Abbruchkriterium (um Laufzeit zu begrenzen)
+			if (counter >= 100000) { // 2. Abbruchkriterium (um Laufzeit zu begrenzen)
 				condition = false; 
 				shaking = clone.deepClone(globalBest);
 			}
@@ -261,6 +269,188 @@ public class VariableNeighborhoodSearch {
 		return shaking;
 	}
 
+	public Schedule shakingNeihborhood(int random1, int random2){
+		int counter = 0;
+		boolean condition = true;
+		while(condition) {
+			Roundtrip eins = localBest.getUmlaufplan().get(random1);
+			Roundtrip zwei = localBest.getUmlaufplan().get(random2);
+			//Roundtrip eins = shaking.getUmlaufplan().get(47);
+			//Roundtrip zwei = shaking.getUmlaufplan().get(64);
+			Roundtrip einsNeu = new Roundtrip(eins.getId());
+			Roundtrip zweiNeu = new Roundtrip(zwei.getId());
+			ArrayList<Servicejourney> sfOfEins = new ArrayList<Servicejourney>();
+			ArrayList<Servicejourney> sfOfZwei = new ArrayList<Servicejourney>();
+			Roundtrip listEins = null;
+			Roundtrip listZwei = null;
+			Roundtrip randomEins = localBest.getUmlaufplan().get(random1);
+			Roundtrip randomZwei = localBest.getUmlaufplan().get(random2);
+
+			for (int i = 0; i < eins.getJourneys().size(); i++) {
+				if (eins.getJourneys().get(i) instanceof Servicejourney) {
+					Servicejourney toAdd = (Servicejourney) eins.getJourneys().get(i);
+					sfOfEins.add(toAdd);
+				}
+			}
+			for (int i = 0; i < zwei.getJourneys().size(); i++) {
+				if (zwei.getJourneys().get(i) instanceof Servicejourney) {
+					sfOfZwei.add((Servicejourney) zwei.getJourneys().get(i));
+				}
+			}
+			int randomI = (int)((Math.random()*sfOfEins.size())); 
+			int randomJ = (int)((Math.random()*sfOfZwei.size())); 
+
+			// einsNeu bauen
+			for (int i = 0; i <= randomJ; i++) {
+				einsNeu.getJourneys().add(sfOfZwei.get(i));	// alle SF aus zwei bis randomJ einfuegen
+			}
+			for (int i = randomI; i < sfOfEins.size(); i++) {
+				einsNeu.getJourneys().add(sfOfEins.get(i));	// alle SF aus eins beginnend bei randomI einfuegen
+			}
+			einsNeu.addFahrtAfterFahrt(0, deadruntimes.get(zwei.getDepot() + einsNeu.getJourneys().getFirst().getFromStopId())); // Ausrueckfahrt einfuegen
+			for (int i = 1; i < einsNeu.getJourneys().size()-1; i = i + 2) {
+				if(einsNeu.getAtIndex(i) instanceof Deadruntime){
+					break;
+				}
+				einsNeu.addFahrtAfterFahrt(i+1, deadruntimes.get(einsNeu.getJourneys().get(i).getToStopId() + einsNeu.getJourneys().get(i+1).getFromStopId())); // alle inneren LF einfuegen
+			}
+			einsNeu.getJourneys().add(deadruntimes.get(einsNeu.getJourneys().getLast().getToStopId() + eins.getDepot())); // Einrueckfahrt einfuegen
+
+			String startDepotEins = einsNeu.getJourneys().getFirst().getFromStopId();
+			String EndDepotEins = einsNeu.getJourneys().getLast().getToStopId();
+			if (!startDepotEins.equals(EndDepotEins)){ // der Umlauf hat unterschiedliche Depots
+				String bestDepot = FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes);
+				FeasibilityHelper.assignBestDepot(einsNeu, bestDepot, deadruntimes);
+			}
+
+			if (einsNeu.isFeasible()) {
+
+				// zweiNeu bauen
+				for (int i = 0; i <= randomI-1; i++) {
+					zweiNeu.getJourneys().add(sfOfEins.get(i));	// alle SF aus eins bis randomI-1 einfuegen
+				}
+				for (int i = randomJ+1; i < sfOfZwei.size(); i++) {
+					zweiNeu.getJourneys().add(sfOfZwei.get(i));	// alle SF aus zwei beginnend bei randomJ+1 einfuegen
+				}
+				if(zweiNeu.getJourneys().size() >= 1){
+					zweiNeu.addFahrtAfterFahrt(0, deadruntimes.get(eins.getDepot() + zweiNeu.getJourneys().getFirst().getFromStopId())); // Ausrueckfahrt einfuegen
+					for (int i = 1; i < zweiNeu.getJourneys().size()-1; i = i + 2) {
+						if(zweiNeu.getAtIndex(i) instanceof Deadruntime){
+							break;
+						}
+						zweiNeu.addFahrtAfterFahrt(i + 1, deadruntimes.get(zweiNeu.getJourneys().get(i).getToStopId() + zweiNeu.getJourneys().get(i+1).getFromStopId())); // alle inneren LF einfuegen
+					}
+					zweiNeu.getJourneys().add(deadruntimes.get(zweiNeu.getJourneys().getLast().getToStopId() + zwei.getDepot())); // Einrueckfahrt einfuegen
+
+					String startDepotZwei = zweiNeu.getJourneys().getFirst().getFromStopId();
+					String EndDepotZwei = zweiNeu.getJourneys().getLast().getToStopId();
+					if (!startDepotZwei.equals(EndDepotZwei)){ // der Umlauf hat unterschiedliche Depots
+						String bestDepot = FeasibilityHelper.searchBestDepot(zweiNeu, deadruntimes);
+						FeasibilityHelper.assignBestDepot(zweiNeu, bestDepot, deadruntimes);
+					}
+					if(zweiNeu.isFeasible()){
+
+						if(!(eins.equals(einsNeu) && zwei.equals(zweiNeu))){
+							localBest.getUmlaufplan().remove(randomEins);
+							localBest.getUmlaufplan().remove(randomZwei);
+							localBest.getUmlaufplan().add(einsNeu);
+							localBest.getUmlaufplan().add(zweiNeu);
+						}
+					}
+					else{
+						continue;
+					}
+					if(localBest.isFeasible()){ // 1. Abbruchkriterium: es wurde eine zulaessige zufaellige Loesung gefunden
+
+						condition = false;
+
+						ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
+						if (!randomEins.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(randomEins.getCharge());
+						}
+						if (!randomZwei.getCharge().contains(null)) {
+							decreaseFrequencyAt.addAll(randomZwei.getCharge());
+						}
+						for (int i = 0; i < decreaseFrequencyAt.size(); i++) {
+							if (decreaseFrequencyAt.contains(null)) {
+								System.err.println("Attention!");
+							}
+							Stoppoint current = decreaseFrequencyAt.get(i);
+							current.setFrequency(current.getFrequency()-1);
+							if(current.getFrequency() == 0){
+								current.setLoadingstation(false);
+								localBest.getStoppointsWithLoadingStations().remove(current.getId());
+								for (int j = 0; j < localBest.getUmlaufplan().size(); j++) {
+									for (int j2 = 0; j2 < localBest.getUmlaufplan().get(j).getCharge().size(); j2++) {
+										if (localBest.getUmlaufplan().get(j).getCharge().get(j2) != null){
+											if (localBest.getUmlaufplan().get(j).getCharge().get(j2).getId().equals(current.getId())) {
+												localBest.getUmlaufplan().get(j).getCharge().remove(j2);
+											}
+										}
+									}
+								}
+								//System.out.println("An Haltestelle " + current.getId() + " wurde ein Ladestation entfernt.");
+							}
+						}
+
+						listEins = FeasibilityHelper.roundtripWithCharging(einsNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, eins.getId());
+						if(listEins == null){ // Umlauf aufgrund Kapazitaet nicht moeglich
+							localBest = clone.deepClone(globalBest);
+							continue;
+						}
+						einsNeu.setCharge(listEins.getCharge());
+						einsNeu.setBuild(listEins.getBuild());
+
+						listZwei = FeasibilityHelper.roundtripWithCharging(zweiNeu.getJourneys(), localBest.getStoppoints(), deadruntimes, servicejourneys, zwei.getId());
+						if (listZwei == null) { // Umlauf aufgrund Kapazitaet nicht moeglich
+							localBest = clone.deepClone(globalBest);
+							continue;
+						}
+						zweiNeu.setCharge(listZwei.getCharge());
+						zweiNeu.setBuild(listZwei.getBuild());
+
+						for (int i = 0; i < listEins.getCharge().size(); i++) {
+							Stoppoint x = (Stoppoint) listEins.getCharge().get(i);
+							if(x.isLoadingstation() == false){
+								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								x.setFrequency(1);
+								localBest.getStoppointsWithLoadingStations().add(x);
+								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+							}
+							else{
+								x.setFrequency(x.getFrequency()+1);
+							}
+						}
+						for (int i = 0; i < listZwei.getCharge().size(); i++) {
+							Stoppoint x = (Stoppoint) listZwei.getCharge().get(i);
+							if(x.isLoadingstation() == false){
+								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								x.setFrequency(1);
+								localBest.getStoppointsWithLoadingStations().add(x);
+								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
+							}
+							else{
+								x.setFrequency(x.getFrequency()+1);
+							}
+						}
+						//shaking.printLoadingstations();
+					}
+					else{ // Kantentausch wird rueckgaengig gemacht
+						localBest = clone.deepClone(globalBest);
+					}
+				}
+			}
+			counter ++;
+			if (counter >= 100000) { // 2. Abbruchkriterium (um Laufzeit zu begrenzen)
+				condition = false; 
+				localBest = clone.deepClone(globalBest);
+			}
+		}
+		localBest.setNumberOfLoadingStations(localBest.getStoppointsWithLoadingStations().size());
+		localBest.calculateCosts();
+		return localBest;
+
+	}
 	/** BestImprovement: Methode zum Bestimmen der best moeglichen Verbesserung innerhalb eines Umlaufplans
 	 * @param kMax - maximale Groesse der Nachbarschaft
 	 * @return gibt die neue lokal beste Loesung zurueck
@@ -293,9 +483,15 @@ public class VariableNeighborhoodSearch {
 				randomNeu = (int)(Math.random()*localBest.getUmlaufplan().size()); 
 			}
 			randoms.add(randomNeu); 
-			
+
+			/**
+			// Shaking
+			for (int i = 0; i < randoms.size()-1; i++) {
+				localBest = shakingNeihborhood(randoms.get(i), randoms.get(randoms.size()-1)); 
+			}
+			*/
+		
 			// setze Methode Zweioptverbesserung fuer alle Paare von zufaellig gezogenen Umlaeufen ein
-			
 			for (int i = 0; i < randoms.size()-1; i++) {
 				Verbesserungsobjekt tempZweiOpt = zweiOpt(randoms.get(i), randoms.get(randoms.size()-1)); 
 				if(tempZweiOpt != null){ // falls eine Verbesserung vorhanden ist
@@ -308,7 +504,7 @@ public class VariableNeighborhoodSearch {
 					}*/
 				}
 			}	
-			
+
 			// setze Methode sfUmlegen fuer alle Paare von zufaellig gezogenen Umlaeufen ein
 			for (int i = 0; i < randoms.size()-1; i++) {
 				Verbesserungsobjekt tempSfUmlegen = sfUmlegen(randoms.get(i), randoms.get(randoms.size()-1));
@@ -419,7 +615,7 @@ public class VariableNeighborhoodSearch {
 	 */
 	private Verbesserungsobjekt sfUmlegen(Integer index1, Integer index2) {
 
-		Schedule sfUmlegen = clone.deepClone(localBest);
+		Schedule sfUmlegen = clone.deepClone(shaking);
 		Verbesserungsobjekt result = new Verbesserungsobjekt(0.0, null, null, null, null); // Initiales Verbesserungsobjekt
 
 		Roundtrip small;
@@ -782,7 +978,7 @@ public class VariableNeighborhoodSearch {
 								}
 
 								savings = (initialCosts - newCosts) + fictiveSavings;
-								
+
 								if(savings > 0 && savings  > result.getSavings()){
 									result.setSavings(savings);
 									result.setZwei(newBig);
@@ -807,8 +1003,8 @@ public class VariableNeighborhoodSearch {
 	}
 
 	private Verbesserungsobjekt zweiOpt(Integer index1, Integer index2) {
-		
-		Schedule zweiOpt = clone.deepClone(localBest);
+
+		Schedule zweiOpt = clone.deepClone(shaking);
 		double savings = 0.0;
 		Verbesserungsobjekt result = new Verbesserungsobjekt(savings, null, null, null, null); // Initiales Verbesserungsobjekt
 
@@ -844,8 +1040,8 @@ public class VariableNeighborhoodSearch {
 			}
 		}
 
-		
-		// versuche erste SF von Eins mit erster SF von Zwei zu vertauschen
+
+		// versuche Kantentausch durch Löschen von zweiter Kante von Eins und erster Kante von Zwei
 		if(FeasibilityHelper.compatibility(sfEins.getFirst(), sfZwei.getFirst(), deadruntimes)){
 			if(sfEins.size() == 1){ // es wuerde ein Umlauf wegfallen
 				Roundtrip einsNeu = new Roundtrip(eins.getId());
@@ -855,6 +1051,9 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
 					if (!eins.getCharge().contains(null)) {
@@ -904,7 +1103,7 @@ public class VariableNeighborhoodSearch {
 						}
 						einsNeu.setCharge(listEins.getCharge());
 						einsNeu.setBuild(listEins.getBuild());
-						
+
 						// neue Umlaeufe speichern, falls besser
 						double newCostValue = einsNeu.getKostenMitLadestationen();
 						if(newCostValue < currentCostValue){
@@ -918,7 +1117,7 @@ public class VariableNeighborhoodSearch {
 					}
 				}
 			}
-			else{
+			else{ // lösche zweite Kante von eins und erste Kante von zwei 
 				Roundtrip einsNeu = new Roundtrip(eins.getId());
 				int indexOfSfEins = eins.getIndexOfJourney(sfEins.getFirst());
 				int indexOfSfZwei = zwei.getIndexOfJourney(sfZwei.getFirst());
@@ -926,12 +1125,18 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
 					deadruntimeId = zwei.getDepot() + eins.getAtIndex(eins.getIndexOfJourney(sfEins.get(1))).getFromStopId(); 
 					// neue Ausrueckfahrt hinzufuegen
 					zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 					zweiNeu.getJourneys().addAll(eins.getFahrtenVonBis(eins.getIndexOfJourney(sfEins.get(1)), eins.getJourneys().size()-1));
+					if(!(zweiNeu.getJourneys().getFirst().getFromStopId().equals(zweiNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+						FeasibilityHelper.assignBestDepot(zweiNeu, FeasibilityHelper.searchBestDepot(zweiNeu, deadruntimes), deadruntimes);
+					}
 					if(zweiNeu.isFeasible()){
 						ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
 						if (!eins.getCharge().contains(null)) {
@@ -983,7 +1188,7 @@ public class VariableNeighborhoodSearch {
 							}
 							einsNeu.setCharge(listEins.getCharge());
 							einsNeu.setBuild(listEins.getBuild());
-							
+
 							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
@@ -1000,7 +1205,7 @@ public class VariableNeighborhoodSearch {
 							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
-							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen() + fictiveCostsForFrequency(listEins, listZwei, einsNeu, zweiNeu);
 							if(newCostValue < currentCostValue){
 								currentCostValue = newCostValue;
 								betterEins = einsNeu;
@@ -1011,13 +1216,13 @@ public class VariableNeighborhoodSearch {
 								setRoundtripsAgain = true;
 							}
 						}
-			}
-			
+					}
+
 				}
 			}
 		}
-		
-		// versuche letzte SF von Eins mit letzter SF von Zwei zu vertauschen
+
+		// versuche Kantentausch durch Loeschen der letzten Kante von Eins und der vorletzten Kante von Zwei
 		if(FeasibilityHelper.compatibility(sfEins.getLast(), sfZwei.getLast(), deadruntimes)){
 			if(setRoundtripsAgain == true){
 				for (int j1 = 0; j1 < zweiOpt.getUmlaufplan().size(); j1++) {
@@ -1050,6 +1255,9 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
 					if (!eins.getCharge().contains(null)) {
@@ -1099,7 +1307,7 @@ public class VariableNeighborhoodSearch {
 						}
 						einsNeu.setCharge(listEins.getCharge());
 						einsNeu.setBuild(listEins.getBuild());
-						
+
 						// neue Umlaeufe speichern, falls besser
 						double newCostValue = einsNeu.getKostenMitLadestationen();
 						if(newCostValue < currentCostValue){
@@ -1121,6 +1329,9 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = eins.getAtIndex(indexOfSfEins).getToStopId() + zwei.getAtIndex(indexOfSfZwei).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(indexOfSfZwei, zwei.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
 					zweiNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, zwei.getIndexOfJourney(sfZwei.get(sfZwei.size()-2))));
@@ -1178,7 +1389,7 @@ public class VariableNeighborhoodSearch {
 							}
 							einsNeu.setCharge(listEins.getCharge());
 							einsNeu.setBuild(listEins.getBuild());
-							
+
 							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
@@ -1195,7 +1406,7 @@ public class VariableNeighborhoodSearch {
 							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
-							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen() + fictiveCostsForFrequency(listEins, listZwei, einsNeu, zweiNeu);
 							if(newCostValue < currentCostValue){
 								currentCostValue = newCostValue;
 								betterEins = einsNeu;
@@ -1207,12 +1418,12 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 					}
-			}
-			
+				}
+
 			}
 		}
-		
-		// versuche Kantentausch mit allen Paaren von inneren Servicefahrten (i nach j)
+
+		// versuche Kantentausch mit allen Paaren von inneren Kanten (i nach j)
 		for (int i = 0; i < sfEins.size()-1; i++) { 
 			for (int j = 1; j < sfZwei.size(); j++) {
 				if(setRoundtripsAgain == true){
@@ -1243,15 +1454,21 @@ public class VariableNeighborhoodSearch {
 
 					Roundtrip einsNeu = new Roundtrip(eins.getId());
 					einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, eins.getIndexOfJourney(sfEins.get(i))));
-					String deadruntimeId = eins.getAtIndex(i).getToStopId() + zwei.getAtIndex(j).getFromStopId(); 
+					String deadruntimeId = einsNeu.getAtIndex(eins.getIndexOfJourney(sfEins.get(i))).getToStopId() + zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(j))).getFromStopId(); 
 					einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 					einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(zwei.getIndexOfJourney(sfZwei.get(j)), zwei.getJourneys().size()-1));
+					if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+						FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+					}
 					if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 						Roundtrip zweiNeu = new Roundtrip(zwei.getId());
 						zweiNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, zwei.getIndexOfJourney(sfZwei.get(j-1))));
-						deadruntimeId = zwei.getAtIndex(j-1).getToStopId() + eins.getAtIndex(i+1).getFromStopId(); 
+						deadruntimeId = zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(j-1))).getToStopId() + eins.getAtIndex(eins.getIndexOfJourney(sfEins.get(i+1))).getFromStopId(); 
 						zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 						zweiNeu.getJourneys().addAll(eins.getFahrtenVonBis(eins.getIndexOfJourney(sfEins.get(i+1)), eins.getJourneys().size()-1));
+						if(!(zweiNeu.getJourneys().getFirst().getFromStopId().equals(zweiNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+							FeasibilityHelper.assignBestDepot(zweiNeu, FeasibilityHelper.searchBestDepot(zweiNeu, deadruntimes), deadruntimes);
+						}
 						if(zweiNeu.isFeasible()){
 
 							ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
@@ -1309,7 +1526,7 @@ public class VariableNeighborhoodSearch {
 							}
 							einsNeu.setCharge(listEins.getCharge());
 							einsNeu.setBuild(listEins.getBuild());
-							
+
 							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
@@ -1326,7 +1543,7 @@ public class VariableNeighborhoodSearch {
 							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
-							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen() + fictiveCostsForFrequency(listEins, listZwei, einsNeu, zweiNeu);
 							if(newCostValue < currentCostValue){
 								currentCostValue = newCostValue;
 								betterEins = einsNeu;
@@ -1341,7 +1558,7 @@ public class VariableNeighborhoodSearch {
 				}
 			}
 		}
-		
+
 		// Kopie von oben fuer Rueckwaertskanten: versuche erste SF von Zwei mit erster SF von Eins zu vertauschen
 		if(FeasibilityHelper.compatibility(sfZwei.getFirst(), sfEins.getFirst(), deadruntimes)){
 			if(setRoundtripsAgain == true){
@@ -1425,9 +1642,9 @@ public class VariableNeighborhoodSearch {
 						}
 						einsNeu.setCharge(listEins.getCharge());
 						einsNeu.setBuild(listEins.getBuild());
-						
+
 						// neue Umlaeufe speichern, falls besser
-						double newCostValue = einsNeu.getKostenMitLadestationen();
+						double newCostValue = einsNeu.getKostenMitLadestationen(); 
 						if(newCostValue < currentCostValue){
 							currentCostValue = newCostValue;
 							betterEins = einsNeu;
@@ -1447,6 +1664,9 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
 					deadruntimeId = zwei.getDepot() + zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(1))).getFromStopId(); 
@@ -1504,7 +1724,7 @@ public class VariableNeighborhoodSearch {
 							}
 							einsNeu.setCharge(listEins.getCharge());
 							einsNeu.setBuild(listEins.getBuild());
-							
+
 							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
@@ -1521,7 +1741,7 @@ public class VariableNeighborhoodSearch {
 							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
-							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen() + fictiveCostsForFrequency(listEins, listZwei, einsNeu, zweiNeu);
 							if(newCostValue < currentCostValue){
 								currentCostValue = newCostValue;
 								betterEins = einsNeu;
@@ -1533,11 +1753,11 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 					}
-			}
-			
+				}
+
 			}
 		}
-		
+
 		//  Kopie von oben fuer Rueckwaertskanten: versuche letzte SF von Zwei mit letzter SF von Eins zu vertauschen
 		if(FeasibilityHelper.compatibility(sfZwei.getLast(), sfEins.getLast(), deadruntimes)){
 			if(setRoundtripsAgain == true){
@@ -1571,6 +1791,9 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
 					if (!eins.getCharge().contains(null)) {
@@ -1621,7 +1844,7 @@ public class VariableNeighborhoodSearch {
 						}
 						einsNeu.setCharge(listEins.getCharge());
 						einsNeu.setBuild(listEins.getBuild());
-						
+
 						// neue Umlaeufe speichern, falls besser
 						double newCostValue = einsNeu.getKostenMitLadestationen();
 						if(newCostValue < currentCostValue){
@@ -1643,6 +1866,9 @@ public class VariableNeighborhoodSearch {
 				String deadruntimeId = zwei.getAtIndex(indexOfSfZwei).getToStopId() + eins.getAtIndex(indexOfSfEins).getFromStopId(); 
 				einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 				einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(indexOfSfEins, eins.getJourneys().size()-1));
+				if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+					FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+				}
 				if(einsNeu.isFeasible()){ // zeitliche Sequenzen sind zulaessig
 					Roundtrip zweiNeu = new Roundtrip(zwei.getId());
 					zweiNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, eins.getIndexOfJourney(sfEins.get(sfEins.size()-2))));
@@ -1700,7 +1926,7 @@ public class VariableNeighborhoodSearch {
 							}
 							einsNeu.setCharge(listEins.getCharge());
 							einsNeu.setBuild(listEins.getBuild());
-							
+
 							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
@@ -1717,7 +1943,7 @@ public class VariableNeighborhoodSearch {
 							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
-							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen() + fictiveCostsForFrequency(listEins, listZwei, einsNeu, zweiNeu);
 							if(newCostValue < currentCostValue){
 								currentCostValue = newCostValue;
 								betterEins = einsNeu;
@@ -1729,7 +1955,7 @@ public class VariableNeighborhoodSearch {
 							}
 						}
 					}
-			}
+				}
 			}
 		}
 		// Kopie von oben für die Betrachtung aller Rueckwartskanten (j nach i)
@@ -1762,15 +1988,21 @@ public class VariableNeighborhoodSearch {
 						&& FeasibilityHelper.compatibility(sfZwei.get(j), sfEins.get(i), deadruntimes)){
 					Roundtrip einsNeu = new Roundtrip(eins.getId());
 					einsNeu.getJourneys().addAll(eins.getFahrtenVonBis(0, eins.getIndexOfJourney(sfEins.get(i-1))));
-					String deadruntimeId = eins.getAtIndex(i-1).getToStopId() + zwei.getAtIndex(j+1).getFromStopId(); 
+					String deadruntimeId = eins.getAtIndex(eins.getIndexOfJourney(sfEins.get(i-1))).getToStopId() + zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(j+1))).getFromStopId(); 
 					einsNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 					einsNeu.getJourneys().addAll(zwei.getFahrtenVonBis(zwei.getIndexOfJourney(sfZwei.get(j+1)), zwei.getJourneys().size()-1));
+					if(!(einsNeu.getJourneys().getFirst().getFromStopId().equals(einsNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+						FeasibilityHelper.assignBestDepot(einsNeu, FeasibilityHelper.searchBestDepot(einsNeu, deadruntimes), deadruntimes);
+					}
 					if(einsNeu.isFeasible()){
 						Roundtrip zweiNeu = new Roundtrip(zwei.getId());
 						zweiNeu.getJourneys().addAll(zwei.getFahrtenVonBis(0, zwei.getIndexOfJourney(sfZwei.get(j))));
-						deadruntimeId = zwei.getAtIndex(j).getToStopId() + eins.getAtIndex(i).getFromStopId(); 
+						deadruntimeId = zwei.getAtIndex(zwei.getIndexOfJourney(sfZwei.get(j))).getToStopId() + eins.getAtIndex(eins.getIndexOfJourney(sfEins.get(i))).getFromStopId(); 
 						zweiNeu.getJourneys().add(deadruntimes.get(deadruntimeId));
 						zweiNeu.getJourneys().addAll(eins.getFahrtenVonBis(eins.getIndexOfJourney(sfEins.get(i)), eins.getJourneys().size()-1));
+						if(!(zweiNeu.getJourneys().getFirst().getFromStopId().equals(zweiNeu.getJourneys().getLast().getToStopId()))){ // der neue Umlauf hat unterschiedliche Depots
+							FeasibilityHelper.assignBestDepot(zweiNeu, FeasibilityHelper.searchBestDepot(zweiNeu, deadruntimes), deadruntimes);
+						}
 						if(zweiNeu.isFeasible()){
 
 							ArrayList<Stoppoint> decreaseFrequencyAt = new ArrayList<Stoppoint>();
@@ -1828,7 +2060,7 @@ public class VariableNeighborhoodSearch {
 							}
 							einsNeu.setCharge(listEins.getCharge());
 							einsNeu.setBuild(listEins.getBuild());
-							
+
 							for (int i1 = 0; i1 < listZwei.getCharge().size(); i1++) {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false){
@@ -1845,7 +2077,7 @@ public class VariableNeighborhoodSearch {
 							zweiNeu.setBuild(listZwei.getBuild());
 
 							// neue Umlaeufe speichern, falls besser
-							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen();
+							double newCostValue = einsNeu.getKostenMitLadestationen() + zweiNeu.getKostenMitLadestationen() + fictiveCostsForFrequency(listEins, listZwei, einsNeu, zweiNeu);
 							if(newCostValue < currentCostValue){
 								currentCostValue = newCostValue;
 								betterEins = einsNeu;
@@ -1912,7 +2144,33 @@ public class VariableNeighborhoodSearch {
 		}
 		return minimal;
 	}
-	
+
+	public int fictiveCostsForFrequency(Roundtrip eins, Roundtrip zwei, Roundtrip einsNeu, Roundtrip zweiNeu){
+		int points = 0;
+		for (int k = 0; k < einsNeu.getCharge().size(); k++) {
+			Stoppoint current = einsNeu.getCharge().get(k);
+			for (int n = 0; n < eins.getCharge().size(); n++) {
+				if (eins.getCharge().get(n).getId().equals(current.getId())) {
+					int difference = eins.getCharge().get(n).getFrequency() - current.getFrequency();
+					points = points + difference/eins.getCharge().get(n).getFrequency();
+				}
+			}
+		}
+		for (int k = 0; k < zweiNeu.getCharge().size(); k++) {
+			Stoppoint current = zweiNeu.getCharge().get(k);
+			for (int n = 0; n < zwei.getCharge().size(); n++) {
+				if (zwei.getCharge().get(n).getId().equals(current.getId())) {
+					int difference = zwei.getCharge().get(n).getFrequency() - current.getFrequency();
+					points = points + difference/zwei.getCharge().get(n).getFrequency();					
+				}
+			}
+		}
+		if(points != 0){
+			System.out.println();
+		}
+		return points * 10;
+	}
+
 	public void writeTempSolution(String path){
 		FileWriter fw = null;
 		BufferedWriter bw = null;
@@ -1926,8 +2184,85 @@ public class VariableNeighborhoodSearch {
 		bw = new BufferedWriter(fw); 
 		pw = new PrintWriter(bw);
 		String result = globalBest.getUmlaufplan().size() + ";" + globalBest.getNumberOfLoadingStations() + ";" 
-		+ globalBest.getFixCosts() + ";" + globalBest.getVariableCosts() + ";" + globalBest.getTotalCosts();
+				+ globalBest.getFixCosts() + ";" + globalBest.getVariableCosts() + ";" + globalBest.getTotalCosts();
 		pw.println(result);
 		pw.flush();
+	}
+
+	public void writeDepots(String path){
+		FileWriter fw = null;
+		BufferedWriter bw = null;
+		PrintWriter pw = null;
+		try {
+			// waehle Zielpfad und Name der Ergebnis-Datei aus
+			fw = new FileWriter(path, true);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} 
+		bw = new BufferedWriter(fw); 
+		pw = new PrintWriter(bw);
+		/**
+		 * Erzeuge in der Datei eine neue Relation fuer die Depots
+		 */
+		pw.println("$DEPOT:ID;capacity");
+		for (int i = 0; i < globalBest.getDepots().size(); i++) {
+			String id = globalBest.getDepots().get(i).getId();
+			int capacity = 0;
+			for (int j = 0; j < globalBest.getUmlaufplan().size(); j++) {
+				if(globalBest.getUmlaufplan().get(j).getJourneys().getFirst().getFromStopId().equals(id)){
+					capacity ++;
+				}
+			}
+			pw.println(id + ";" + capacity);
+			pw.flush();
+		}
+		/**
+		 * Erzeuge in der Datei eine neue Relation fuer die Haltestellen
+		 */
+		pw.println("$INITIALSTOPPOINT:ID;isLoadingstation;frequency");
+
+		/**
+		 * Durchlaufe alle Haltestellen und pruefe, ob eine Ladestation gebaut wurde
+		 * und wie die Frequentierung an dieser Ladestation ist.
+		 * Erzeuge daraus String, um sie in die Datei zu schreiben.
+		 */
+		for(Entry <String, Stoppoint> e: globalBest.getStoppoints().entrySet()){
+			Stoppoint i1 = globalBest.getStoppoints().get(e.getKey());
+			String stoppointId = i1.getId();
+			String isLoadingstation;
+			int counter = 0;
+			String frequency = "0";
+			if (i1.isLoadingstation()) {
+				isLoadingstation = "true";
+				for (int i = 0; i < globalBest.getUmlaufplan().size(); i++) {
+					for (int j = 0; j < globalBest.getUmlaufplan().get(i).getCharge().size(); j++) {
+						if(globalBest.getUmlaufplan().get(i).getCharge().get(j).getId().equals(i1.getId())){
+							counter ++;
+						}
+					}
+				}
+				if(i1.getFrequency() == 0){ // Ladestation wird nicht mehr gebraucht
+					i1.setLoadingstation(false);
+					isLoadingstation = "false";
+				}
+			}
+			else{
+				isLoadingstation = "false";
+			}
+			frequency = "" + counter + "";
+			pw.println(stoppointId + ";" + isLoadingstation + ";" + frequency);
+			pw.flush();
+		}
+
+		/**
+		 * Erzeuge in der Datei eine neue Relation für den Umlaufplan der Initialloesung
+		 */
+		pw.println("$Umlauf:ID;Fahrten;;;;;;;;");
+
+		for (int j = 0; j < globalBest.getUmlaufplan().size(); j++) {
+			String umlaufId = String.valueOf(j);
+			pw.println(umlaufId + ";" + globalBest.getUmlaufplan().get(j).toStringIds() + ";" + globalBest.getUmlaufplan().get(j).getLadenString());
+			pw.flush();
+		}
 	}
 }
