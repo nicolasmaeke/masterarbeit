@@ -154,11 +154,19 @@ public class ReadReassessedData {
 			}
 		}
 		if(counter < numberOfDepots){
+			boolean flag = true;
 			for (Map.Entry<String, Stoppoint> entry : stoppoints.entrySet()) { // dann zufaellig weitere Depots
 				Depot d = new Depot(entry.getKey());
-				depots.add(d);
-				stoppoints.get(entry.getKey()).setDepot(true);
-				counter ++;
+				for (int i = 0; i < depots.size(); i++) {
+					if(depots.get(i).getId().equals(d.getId())){
+						flag = false;
+					}
+				}
+				if(flag == true){
+					depots.add(d);
+					stoppoints.get(entry.getKey()).setDepot(true);
+					counter ++;
+				}
 				if (counter == numberOfDepots) {
 					break;
 				}

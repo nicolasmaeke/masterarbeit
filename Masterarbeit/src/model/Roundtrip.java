@@ -158,6 +158,10 @@ public class Roundtrip {
 					next = this.getAtIndex(j+2);
 					if(next instanceof Servicejourney){
 						runtime = this.getAtIndex(j+1).getRuntime();
+						if(!(temp.getToStopId().equals(this.getAtIndex(j+1).getFromStopId()) || !(this.getAtIndex(j+1).getToStopId().equals(next.getFromStopId())))){
+							//System.err.println("Falsche Leerfahrt");
+							return false;
+						}
 						if((((Servicejourney) temp).getSfArrTime().getTime() + runtime > ((Servicejourney) next).getSfDepTime().getTime())){
 							//System.err.println("Zeitlich nicht zulässig");
 							return false;
@@ -167,6 +171,10 @@ public class Roundtrip {
 						next = this.getAtIndex(j+3);
 						if(next instanceof Servicejourney){
 							runtime = this.getAtIndex(j+1).getRuntime() + this.getAtIndex(j+2).getRuntime();
+							if(!(temp.getToStopId().equals(this.getAtIndex(j+1).getFromStopId()) || !(this.getAtIndex(j+2).getToStopId().equals(next.getFromStopId())))){
+								//System.err.println("Falsche Leerfahrt");
+								return false;
+							}
 							if((((Servicejourney) temp).getSfArrTime().getTime() + runtime > ((Servicejourney) next).getSfDepTime().getTime())){
 								//System.err.println("Zeitlich nicht zulässig");
 								return false;

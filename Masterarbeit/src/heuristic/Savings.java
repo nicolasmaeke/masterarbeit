@@ -355,7 +355,7 @@ public class Savings {
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else{
-						double neueSavings = currenntSavingsMatrix.get(currentKey)-(avgDistanceServicejourney+avgDistanceDeadrun); // verringerte Strafkosten bei einer Ladestation
+						double neueSavings = currenntSavingsMatrix.get(currentKey)-((avgDistanceServicejourney+avgDistanceDeadrun)*(3/depots.size())); // verringerte Strafkosten bei einer Ladestation
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 				}
