@@ -88,6 +88,9 @@ public class Savings {
 		int iteration = 0;
 		
 		do {
+			if (iteration == 131) {
+				System.out.println();
+			}
 			savingsMatrix = neuerUmlaufplan(savingsMatrix);
 			valueSaving = 0.0;
 			for (Entry<String, Double> e: savingsMatrix.entrySet()){ 
@@ -351,11 +354,12 @@ public class Savings {
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else if(chargingList.getBuild().size() == 2){
-						double neueSavings = currenntSavingsMatrix.get(currentKey) - 399550; // setze savings auf 50, um das bauen von max. 2 Ladestationen zu erlauben
+						double neueSavings = currenntSavingsMatrix.get(currentKey) - Schedule.LOADINGSTATION_COSTS-50; // setze savings auf 50, um das bauen von max. 2 Ladestationen zu erlauben
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 					else{
-						double neueSavings = currenntSavingsMatrix.get(currentKey)-((avgDistanceServicejourney+avgDistanceDeadrun)*(3/depots.size())); // verringerte Strafkosten bei einer Ladestation
+						double neueSavings = currenntSavingsMatrix.get(currentKey)-((avgDistanceServicejourney+avgDistanceDeadrun)); // verringerte Strafkosten bei einer Ladestation
+						//double neueSavings = currenntSavingsMatrix.get(currentKey)-50;
 						currenntSavingsMatrix.replace(currentKey, neueSavings); // aktualisiere die Savings Matrix
 					}
 				}
@@ -363,6 +367,7 @@ public class Savings {
 			}
 			else {
 				currentNew = umlaeufeZusammenlegen(currentKey);
+				umlaeufe = umlaeufeFinden(currentKey);
 				chargingList = FeasibilityHelper.roundtripWithCharging(currentNew, stoppoints, deadruntimes, servicejourneys, umlaeufe.get(0));
 				}
 		} while (currentKey != getHighestSaving(currenntSavingsMatrix)); // solange die Savings Matrix veraendert wird bzw. die vormal groessten Savings auf Grund der Veranedrung nicht mehr die groessten Savings sind
@@ -470,6 +475,9 @@ public class Savings {
 	 */	
 	private LinkedList<Journey> umlaeufeZusammenlegen(String key){
 
+		int countOld = 0;
+		int countNew = 0;
+		
 		LinkedList<Journey> neu = null; // Container fuer den neu zu erstellenden Umlauf
 
 		ArrayList<Integer> umlaeufe = umlaeufeFinden(key); // Die beiden Umlaeufe, die zusammengelegt werden sollen
@@ -488,10 +496,19 @@ public class Savings {
 				break;
 			}
 		}
-		
+		for (int i = 0; i < eins.size(); i++) {
+			if (eins.get(i) instanceof Servicejourney) {
+				countOld ++;
+			}
+		}
 		eins.removeLast(); // loesche letzte Fahrt von eins (Einrueckfahrt)
 		if(eins.getLast() instanceof Deadruntime){ // eins hatte am Ende einen Umweg
 			eins.removeLast(); // damit nicht drei Leerfahrten aufeinander folgen können
+		}
+		for (int i = 0; i < zwei.size(); i++) {
+			if (zwei.get(i) instanceof Servicejourney) {
+				countOld ++;
+			}
 		}
 		zwei.removeFirst(); // loesche erste Fahrt von zwei (Ausrueckfahrt)
 		if(zwei.getFirst() instanceof Deadruntime){ // zwei hatte zu Beginn einen Umweg
@@ -528,6 +545,15 @@ public class Savings {
 				neu.removeFirst();
 				neu.addFirst(deadruntimes.get("" + depotTwo.getId() + first.getFromStopId()));
 			}
+		}
+		for (int i = 0; i < neu.size(); i++) {
+			if (neu.get(i) instanceof Servicejourney) {
+				countNew ++;
+			}
+		}
+		if(countOld != countNew){
+			System.err.println();
+			return null;
 		}
 		return neu; // der zusammengelegte Umlauf
 	}

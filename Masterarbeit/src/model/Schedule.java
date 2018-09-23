@@ -105,9 +105,10 @@ public class Schedule {
 		Journey next = null;
 		double runtime = 0.0;
 		int size = umlaufplan.size();
-
 		
 		for (int i = 0; i < size; i++) {
+			double zeitpuffer = 0.0;
+			double verbrauch = 0.0;
 			temp = null;
 			next = null;
 			runtime = 0.0;
@@ -134,23 +135,34 @@ public class Schedule {
 						}
 					}
 					temp = current.getAtIndex(j);
+					verbrauch = verbrauch + temp.getEnergyConsumption();
 					if(temp instanceof Servicejourney){
 						next = current.getAtIndex(j+2);
 						if(next instanceof Servicejourney){
 							runtime = current.getAtIndex(j+1).getRuntime();
+							if(!(temp.getToStopId().equals(current.getAtIndex(j+1).getFromStopId()) || !(current.getAtIndex(j+1).getToStopId().equals(next.getFromStopId())))){
+								//System.err.println("Falsche Leerfahrt");
+								return false;
+							}
 							if((((Servicejourney) temp).getSfArrTime().getTime() + runtime > ((Servicejourney) next).getSfDepTime().getTime())){
 								//System.err.println("Zeitlich nicht zulässig");
 								return false;
 							}
+							zeitpuffer = zeitpuffer + ((Servicejourney) next).getSfDepTime().getTime() - ((Servicejourney) temp).getSfArrTime().getTime() + runtime;
 						}
 						else{
 							next = current.getAtIndex(j+3);
 							if(next instanceof Servicejourney){
 								runtime = current.getAtIndex(j+1).getRuntime() + current.getAtIndex(j+2).getRuntime();
+								if(!(temp.getToStopId().equals(current.getAtIndex(j+1).getFromStopId()) || !(current.getAtIndex(j+2).getToStopId().equals(next.getFromStopId())))){
+									//System.err.println("Falsche Leerfahrt");
+									return false;
+								}
 								if((((Servicejourney) temp).getSfArrTime().getTime() + runtime > ((Servicejourney) next).getSfDepTime().getTime())){
 									//System.err.println("Zeitlich nicht zulässig");
 									return false;
 								}
+								zeitpuffer = zeitpuffer + ((Servicejourney) next).getSfDepTime().getTime() - ((Servicejourney) temp).getSfArrTime().getTime() + runtime;
 							}
 						}
 					}
@@ -159,8 +171,10 @@ public class Schedule {
 					count ++;
 				}
 			}
+			if ((verbrauch / ((7.5 / 60) / 1000)) >= zeitpuffer) { // die gesamte Ladezeit ist groesser als der Zeitpuffer
+				System.out.println();
+			}
 		}
-		/**
 		if(count != numberOfServiceJourneys){
 			if(count < numberOfServiceJourneys){
 				//System.err.println("Es fehlen Servicefahrten");
@@ -170,7 +184,6 @@ public class Schedule {
 			}
 			return false;
 		}
-		*/
 		return true;
 	}
 

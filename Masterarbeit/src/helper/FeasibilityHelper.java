@@ -185,7 +185,16 @@ public class FeasibilityHelper {
 	}
 
 	public static Roundtrip roundtripWithCharging(LinkedList<Journey> neu, HashMap<String, Stoppoint> stoppoints, HashMap<String, Deadruntime> deadruntimes, HashMap<String, Servicejourney> servicejourneys, int id){
-
+		
+		int countOld = 0;
+		int countNew = 0;
+		
+		for (int i = 0; i < neu.size(); i++) {
+			if (neu.get(i) instanceof Servicejourney) {
+				countOld ++;
+			}
+		}
+		
 		Roundtrip result = new Roundtrip(id);
 		for (int i = 0; i < neu.size(); i++) {
 			if (neu.get(i) instanceof Servicejourney) {
@@ -580,6 +589,15 @@ public class FeasibilityHelper {
 		}
 		result.setBuild(newStations);
 		result.setCharge(existingStations);
+		for (int j = 0; j < result.getJourneys().size(); j++) {
+			if (result.getJourneys().get(j) instanceof Servicejourney) {
+				countNew ++;
+			}
+		}
+		if (countOld != countNew) {
+			System.err.println();
+			return null;
+		}
 		return result;
 	}
 
