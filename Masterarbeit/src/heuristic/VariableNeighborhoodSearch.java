@@ -966,7 +966,7 @@ public class VariableNeighborhoodSearch {
 								personalkosten = personalkosten * Schedule.STAFF_COSTS / 1000 / 60 / 60;
 								verbrauchsKosten = verbrauchsKosten * Schedule.LOADING_COSTS;
 
-								fictiveSavings = 400000/(small.getNumberOfServicejourneys()) - (verbrauchsKosten + personalkosten);
+								fictiveSavings = Schedule.VEHICLE_COSTS/(small.getNumberOfServicejourneys()) - (verbrauchsKosten + personalkosten);
 
 								if(newSmall.getJourneys().size() == 0){
 									newCosts = newBig.getKostenMitLadestationen();
@@ -2153,8 +2153,8 @@ public class VariableNeighborhoodSearch {
 					penaltyFactor = newSmallerTrip.getJourneys().size() - smallerTrip.getJourneys().size();
 				}
 			}
-			double penaltyCosts = (penaltyFactor*400000*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
-			//double penaltyCosts = (penaltyFactor*400000) / smallerTrip.getJourneys().size();
+			double penaltyCosts = (penaltyFactor*Schedule.VEHICLE_COSTS*0.5) / smallerTrip.getJourneys().size(); // mal 0,5 damit nur SF beruecksichtigt werden
+			//double penaltyCosts = (penaltyFactor*Schedule.VEHICLE_COSTS) / smallerTrip.getJourneys().size();
 			savings = initialCostValue - currentCostValue - penaltyCosts + fictiveSavings;
 			//savings = initialCostValue - currentCostValue + fictiveSavings;
 			result.setSavings(savings);

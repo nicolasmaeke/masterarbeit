@@ -214,7 +214,7 @@ public class Roundtrip {
 					//System.err.println("Frequenz = 0 an Ladestation " + this.getLaden().get(i).getId());
 				}
 				double divisor = 1.0 / test;
-				ladestationsAnteil = ladestationsAnteil + 250000 * (divisor);// Kosten fuer Ladestationen werden anteilig auf die nutzenden Fahrzeugumlaeufe verteilt
+				ladestationsAnteil = ladestationsAnteil + Schedule.LOADINGSTATION_COSTS * (divisor);// Kosten fuer Ladestationen werden anteilig auf die nutzenden Fahrzeugumlaeufe verteilt
 			}	 
 		}
 		double personalkosten = 0.0;
@@ -224,7 +224,7 @@ public class Roundtrip {
 		}
 		personalkosten = (personalkosten * 0.001) / 60 / 60 * 20;
 		verbrauchsKosten = verbrauchsKosten * 0.1;
-		return verbrauchsKosten + personalkosten + ladestationsAnteil + 400000;
+		return verbrauchsKosten + personalkosten + ladestationsAnteil + Schedule.VEHICLE_COSTS;
 	}
 
 	public int getIndexOfJourney(Journey j){

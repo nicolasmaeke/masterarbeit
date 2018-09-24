@@ -22,8 +22,8 @@ public class Schedule {
 	private final HashMap<String, Servicejourney> servicejourneys;
 	private final int numberOfServiceJourneys; 
 	private ArrayList<Stoppoint> stoppointsWithLoadingStations = new ArrayList<Stoppoint>();
-	public static final double VEHICLE_COSTS = 400000; // fix costs for a vehicle in a planning period
-	public static final double LOADINGSTATION_COSTS = 250000; // fix costs for a loadingstation in a planning period
+	public static final double VEHICLE_COSTS = 750000; // fix costs for a vehicle in a planning period
+	public static final double LOADINGSTATION_COSTS = 500000; // fix costs for a loadingstation in a planning period
 	public static final double LOADING_COSTS = 0.1; // electricity price per kWh
 	public static final double STAFF_COSTS = 20; // staff costs per vehicle per hour
 	

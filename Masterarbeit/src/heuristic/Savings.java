@@ -464,7 +464,7 @@ public class Savings {
 		double d2 = two.getJourneys().getFirst().getDistance(); // Distanz zwischen Depot und erster Servicefahrt
 		// Savings: eingesparte Fahrten (d1,d2) minus zusaetzliche Fahrt (deadrun) plus Einsparung eines Fahrzeugs (400.000)
 		// zeitpuffer/1000 sind Strafkosten fuer die Wartezeit zw. den beiden SF (kurze Wartezeit soll belohnt werden)
-		saving = d1 + d2 - deadrun.getDistance() + 400000 - relZeitpuffer; // zeitpuffer/1000 sind Strafkosten dafuer, dass zwei sehr weit auseinader liegende SF zusammengelegt werdern
+		saving = d1 + d2 - deadrun.getDistance() + Schedule.VEHICLE_COSTS - relZeitpuffer; // zeitpuffer/1000 sind Strafkosten dafuer, dass zwei sehr weit auseinader liegende SF zusammengelegt werdern
 		return saving;
 	}
 
