@@ -52,6 +52,7 @@ public class VariableNeighborhoodSearch {
 			if(localBest.getTotalCosts() <= globalBest.getTotalCosts()){
 				globalBest = clone.deepClone(localBest);
 				globalBest.calculateCosts();
+				checkLoadingstations();
 				globalBest.printLoadingstations();
 				globalBest.printUmlaufplan();
 				/**
@@ -489,8 +490,8 @@ public class VariableNeighborhoodSearch {
 			for (int i = 0; i < randoms.size()-1; i++) {
 				localBest = shakingNeihborhood(randoms.get(i), randoms.get(randoms.size()-1)); 
 			}
-			*/
-		
+			 */
+
 			// setze Methode Zweioptverbesserung fuer alle Paare von zufaellig gezogenen Umlaeufen ein
 			for (int i = 0; i < randoms.size()-1; i++) {
 				Verbesserungsobjekt tempZweiOpt = zweiOpt(randoms.get(i), randoms.get(randoms.size()-1)); 
@@ -1097,6 +1098,7 @@ public class VariableNeighborhoodSearch {
 							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 							if(x.isLoadingstation() == false || x.getFrequency() == 0){
 								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								fictiveSavings = fictiveSavings - 50000;
 								x.setFrequency(1);
 								zweiOpt.getStoppointsWithLoadingStations().add(x);
 								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1186,6 +1188,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1202,6 +1205,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1310,6 +1314,7 @@ public class VariableNeighborhoodSearch {
 							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 							if(x.isLoadingstation() == false || x.getFrequency() == 0){
 								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								fictiveSavings = fictiveSavings - 50000;
 								x.setFrequency(1);
 								zweiOpt.getStoppointsWithLoadingStations().add(x);
 								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1396,6 +1401,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1412,6 +1418,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1538,6 +1545,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1554,6 +1562,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1659,6 +1668,7 @@ public class VariableNeighborhoodSearch {
 							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 							if(x.isLoadingstation() == false || x.getFrequency() == 0){
 								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								fictiveSavings = fictiveSavings - 50000;
 								x.setFrequency(1);
 								zweiOpt.getStoppointsWithLoadingStations().add(x);
 								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1745,6 +1755,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1761,6 +1772,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1870,6 +1882,7 @@ public class VariableNeighborhoodSearch {
 							Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 							if(x.isLoadingstation() == false || x.getFrequency() == 0){
 								x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+								fictiveSavings = fictiveSavings - 50000;
 								x.setFrequency(1);
 								zweiOpt.getStoppointsWithLoadingStations().add(x);
 								//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1956,6 +1969,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -1972,6 +1986,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -2095,6 +2110,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listEins.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -2111,6 +2127,7 @@ public class VariableNeighborhoodSearch {
 								Stoppoint x = (Stoppoint) listZwei.getCharge().get(i1);
 								if(x.isLoadingstation() == false || x.getFrequency() == 0){
 									x.setLoadingstation(true); // Setzen der Ladestationen an den betroffenen Haltestellen
+									fictiveSavings = fictiveSavings - 50000;
 									x.setFrequency(1);
 									zweiOpt.getStoppointsWithLoadingStations().add(x);
 									//System.out.println("An Haltestelle " + x.getId() + " wurde ein Ladestation gebaut.");
@@ -2217,6 +2234,35 @@ public class VariableNeighborhoodSearch {
 		}
 		return points * 10;
 	}
+
+	private void checkLoadingstations() {
+		globalBest.getStoppointsWithLoadingStations().clear();
+		int countLoadingstations = 0;
+		for(Entry <String, Stoppoint> e: globalBest.getStoppoints().entrySet()) {
+			Stoppoint i1 = globalBest.getStoppoints().get(e.getKey());
+			int countFrequency = 0;
+			for (int i = 0; i < globalBest.getUmlaufplan().size(); i++) {
+				for (int j = 0; j < globalBest.getUmlaufplan().get(i).getCharge().size(); j++) {
+					if(globalBest.getUmlaufplan().get(i).getCharge().get(j).getId().equals(i1.getId())) {
+						countFrequency ++;
+					}
+				}
+			}
+			i1.setFrequency(countFrequency);
+			if (i1.getFrequency()==0) {
+				if(!i1.isDepot()) {
+					i1.setLoadingstation(false);
+				}
+			}
+			else {
+				i1.setLoadingstation(true);
+				globalBest.getStoppointsWithLoadingStations().add(i1);
+				countLoadingstations ++;
+			}
+		}
+		globalBest.setNumberOfLoadingStations(countLoadingstations);
+	}
+
 
 	public void writeTempSolution(String path){
 		FileWriter fw = null;
